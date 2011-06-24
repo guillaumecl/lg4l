@@ -70,6 +70,9 @@
 #define G13_LED_M2 1
 #define G13_LED_M3 2
 #define G13_LED_MR 3
+#define G13_LED_BL_R 4
+#define G13_LED_BL_G 5
+#define G13_LED_BL_B 6
 
 #define G13_REPORT_4_INIT	0x00
 #define G13_REPORT_4_FINALIZE	0x01
@@ -113,7 +116,7 @@ struct g13_data {
 	struct gfb_data *gfb_data;
 
 	/* LED stuff */
-	struct led_classdev *led_cdev[4];
+	struct led_classdev *led_cdev[7];
 
 	/* Housekeeping stuff */
 	spinlock_t lock;
@@ -298,7 +301,72 @@ static enum led_brightness g13_led_brightness_get(struct led_classdev *led_cdev)
 	return LED_OFF;
 }
 
-static const struct led_classdev g13_led_cdevs[4] = {
+static void g13_rgb_send(struct hid_device *hdev)
+{
+	struct g13_data *data = hid_get_g13data(hdev);
+
+	data->backlight_report->field[0]->value[0] = data->rgb[0];
+	data->backlight_report->field[0]->value[1] = data->rgb[1];
+	data->backlight_report->field[0]->value[2] = data->rgb[2];
+	data->backlight_report->field[0]->value[3] = 0x00;
+
+	usbhid_submit_report(hdev, data->backlight_report, USB_DIR_OUT);
+}
+
+static void g13_led_bl_brightness_set(struct led_classdev *led_cdev,
+				      int value)
+{
+	struct device *dev;
+	struct hid_device *hdev;
+	struct g13_data *data;
+
+	/* Get the device associated with the led */
+	dev = led_cdev->dev->parent;
+
+	/* Get the hid associated with the device */
+	hdev = container_of(dev, struct hid_device, dev);
+
+	/* Get the underlying data value */
+	data = hid_get_g13data(hdev);
+
+	if (led_cdev == data->led_cdev[G13_LED_BL_R])
+		data->rgb[0] = value;
+	else if (led_cdev == data->led_cdev[G13_LED_BL_G])
+		data->rgb[1] = value;
+	else if (led_cdev == data->led_cdev[G13_LED_BL_B])
+		data->rgb[2] = value;
+
+	g13_rgb_send(hdev);
+}
+
+static int g13_led_bl_brightness_get(struct led_classdev *led_cdev)
+{
+	struct device *dev;
+	struct hid_device *hdev;
+	struct g13_data *data;
+
+	/* Get the device associated with the led */
+	dev = led_cdev->dev->parent;
+
+	/* Get the hid associated with the device */
+	hdev = container_of(dev, struct hid_device, dev);
+
+	/* Get the underlying data value */
+	data = hid_get_g13data(hdev);
+
+	if (led_cdev == data->led_cdev[G13_LED_BL_R])
+		return data->rgb[0];
+	else if (led_cdev == data->led_cdev[G13_LED_BL_G])
+		return data->rgb[1];
+	else if (led_cdev == data->led_cdev[G13_LED_BL_B])
+		return data->rgb[2];
+	else
+		dev_info(dev, G13_NAME " error retrieving LED brightness\n");
+	return 0;
+}
+
+
+static const struct led_classdev g13_led_cdevs[7] = {
 	{
 		.brightness_set		= g13_led_m1_brightness_set,
 		.brightness_get		= g13_led_brightness_get,
@@ -314,6 +382,18 @@ static const struct led_classdev g13_led_cdevs[4] = {
 	{
 		.brightness_set		= g13_led_mr_brightness_set,
 		.brightness_get		= g13_led_brightness_get,
+	},
+	{
+		.brightness_set		= g13_led_bl_brightness_set,
+		.brightness_get		= g13_led_bl_brightness_get,
+	},
+	{
+		.brightness_set		= g13_led_bl_brightness_set,
+		.brightness_get		= g13_led_bl_brightness_get,
+	},
+	{
+		.brightness_set		= g13_led_bl_brightness_set,
+		.brightness_get		= g13_led_bl_brightness_get,
 	},
 };
 
@@ -720,37 +800,6 @@ static void g13_feature_report_4_send(struct hid_device *hdev, int which)
 	usbhid_submit_report(hdev, data->feature_report_4, USB_DIR_OUT);
 }
 
-static void g13_rgb_send(struct hid_device *hdev)
-{
-	struct g13_data *data = hid_get_g13data(hdev);
-
-	data->backlight_report->field[0]->value[0] = data->rgb[0];
-	data->backlight_report->field[0]->value[1] = data->rgb[1];
-	data->backlight_report->field[0]->value[2] = data->rgb[2];
-	data->backlight_report->field[0]->value[3] = 0x00;
-
-	usbhid_submit_report(hdev, data->backlight_report, USB_DIR_OUT);
-}
-
-/*
- * The "rgb" attribute
- * red green blue
- * each with values 0 - 255 (black - full intensity)
- */
-static ssize_t g13_rgb_show(struct device *dev,
-			    struct device_attribute *attr,
-			    char *buf)
-{
-	unsigned r, g, b;
-	struct g13_data *data = dev_get_drvdata(dev);
-
-	r = data->rgb[0];
-	g = data->rgb[1];
-	b = data->rgb[2];
-
-	return sprintf(buf, "%u %u %u\n", r, g, b);
-}
-
 static void g13_rgb_set(struct hid_device *hdev,
 			unsigned r, unsigned g, unsigned b)
 {
@@ -763,35 +812,6 @@ static void g13_rgb_set(struct hid_device *hdev,
 	g13_rgb_send(hdev);
 }
 
-static ssize_t g13_rgb_store(struct device *dev,
-			     struct device_attribute *attr,
-			     const char *buf, size_t count)
-{
-	struct hid_device *hdev;
-	int i;
-	unsigned r;
-	unsigned g;
-	unsigned b;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* If we have an invalid pointer we'll return ENODATA */
-	if (hdev == NULL || &(hdev->dev) != dev)
-		return -ENODATA;
-
-	i = sscanf(buf, "%u %u %u", &r, &g, &b);
-	if (i != 3) {
-		dev_warn(dev, G13_NAME "unrecognized input: %s", buf);
-		return -1;
-	}
-
-	g13_rgb_set(hdev, r, g, b);
-
-	return count;
-}
-
-static DEVICE_ATTR(rgb, 0666, g13_rgb_show, g13_rgb_store);
 
 /*
  * The "minor" attribute
@@ -813,7 +833,6 @@ static DEVICE_ATTR(minor, 0444, g13_minor_show, NULL);
  */
 static struct attribute *g13_attrs[] = {
 	&dev_attr_name.attr,
-	&dev_attr_rgb.attr,
 	&dev_attr_keymap_index.attr,
 	&dev_attr_keymap_switching.attr,
 	&dev_attr_keymap.attr,
@@ -1260,7 +1279,11 @@ static int g13_probe(struct hid_device *hdev,
 	 */
 	g13_led_send(hdev);
 
-	g13_rgb_set(hdev, G13_DEFAULT_RED, G13_DEFAULT_GREEN, G13_DEFAULT_BLUE);
+	data->rgb[0] = G13_DEFAULT_RED;
+	data->rgb[1] = G13_DEFAULT_GREEN;
+	data->rgb[2] = G13_DEFAULT_BLUE;
+	g13_rgb_send(hdev);
+	/* g13_rgb_set(hdev, G13_DEFAULT_RED, G13_DEFAULT_GREEN, G13_DEFAULT_BLUE); */
 
 	/*
 	 * Send the finalize report, then follow with the input report to trigger
