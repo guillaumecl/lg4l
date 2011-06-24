@@ -800,19 +800,6 @@ static void g13_feature_report_4_send(struct hid_device *hdev, int which)
 	usbhid_submit_report(hdev, data->feature_report_4, USB_DIR_OUT);
 }
 
-static void g13_rgb_set(struct hid_device *hdev,
-			unsigned r, unsigned g, unsigned b)
-{
-	struct g13_data *data = hid_get_g13data(hdev);
-
-	data->rgb[0] = r;
-	data->rgb[1] = g;
-	data->rgb[2] = b;
-
-	g13_rgb_send(hdev);
-}
-
-
 /*
  * The "minor" attribute
  */
@@ -1179,7 +1166,7 @@ static int g13_probe(struct hid_device *hdev,
 	dbg_hid("Found all reports\n");
 
 	/* Create the LED structures */
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 7; i++) {
 		data->led_cdev[i] = kzalloc(sizeof(struct led_classdev), GFP_KERNEL);
 		if (data->led_cdev[i] == NULL) {
 			dev_err(&hdev->dev, G13_NAME " error allocating memory for led %d", i);
@@ -1210,11 +1197,20 @@ static int g13_probe(struct hid_device *hdev,
 		case 3:
 			sprintf(led_name, "g13_%d:red:mr", hdev->minor);
 			break;
+		case 4:
+			sprintf(led_name, "g13_%d:red:bl", hdev->minor);
+			break;
+		case 5:
+			sprintf(led_name, "g13_%d:green:bl", hdev->minor);
+			break;
+		case 6:
+			sprintf(led_name, "g13_%d:blue:bl", hdev->minor);
+			break;
 		}
 		data->led_cdev[i]->name = led_name;
 	}
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 7; i++) {
 		led_num = i;
 		error = led_classdev_register(&hdev->dev, data->led_cdev[i]);
 		if (error < 0) {
@@ -1283,7 +1279,6 @@ static int g13_probe(struct hid_device *hdev,
 	data->rgb[1] = G13_DEFAULT_GREEN;
 	data->rgb[2] = G13_DEFAULT_BLUE;
 	g13_rgb_send(hdev);
-	/* g13_rgb_set(hdev, G13_DEFAULT_RED, G13_DEFAULT_GREEN, G13_DEFAULT_BLUE); */
 
 	/*
 	 * Send the finalize report, then follow with the input report to trigger
@@ -1363,7 +1358,7 @@ static void g13_remove(struct hid_device *hdev)
 	kfree(data->name);
 
 	/* Clean up the leds */
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 7; i++) {
 		led_classdev_unregister(data->led_cdev[i]);
 		kfree(data->led_cdev[i]->name);
 		kfree(data->led_cdev[i]);
