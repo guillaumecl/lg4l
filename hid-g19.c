@@ -172,7 +172,7 @@ static void g19_led_send(struct hid_device *hdev)
 
 	g19data->led_report->field[0]->value[0] = g19data->led&0xFF;
 
-	usbhid_submit_report(hdev, g19data->led_report, USB_DIR_OUT);
+	hid_hw_request(hdev, g19data->led_report, HID_REQ_SET_REPORT);
 }
 
 static void g19_screen_bl_send(struct hid_device *hdev)
@@ -214,7 +214,7 @@ static void g19_rgb_send(struct hid_device *hdev)
 	g19data->backlight_report->field[0]->value[1] = g19data->rgb[1];
 	g19data->backlight_report->field[0]->value[2] = g19data->rgb[2];
 
-	usbhid_submit_report(hdev, g19data->backlight_report, USB_DIR_OUT);
+	hid_hw_request(hdev, g19data->backlight_report, HID_REQ_SET_REPORT);
 }
 
 static void g19_led_set(struct led_classdev *led_cdev,
@@ -545,7 +545,7 @@ static void g19_feature_report_4_send(struct hid_device *hdev, int which)
 		return;
 	}
 
-	usbhid_submit_report(hdev, g19data->feature_report_4, USB_DIR_OUT);
+	hid_hw_request(hdev, g19data->feature_report_4, HID_REQ_SET_REPORT);
 }
 
 /*
@@ -1029,7 +1029,7 @@ static int g19_probe(struct hid_device *hdev,
 	 * report 6 and wait for us to get a response.
 	 */
 	g19_feature_report_4_send(hdev, G19_REPORT_4_INIT);
-	usbhid_submit_report(hdev, g19data->start_input_report, USB_DIR_IN);
+	hid_hw_request(hdev, g19data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g19data->ready, HZ);
 
 	/* Protect g19data->ready_stages before checking whether we're ready to proceed */
@@ -1061,8 +1061,8 @@ static int g19_probe(struct hid_device *hdev,
 	 * report 6 and wait for us to get a response.
 	 */
 	g19_feature_report_4_send(hdev, G19_REPORT_4_FINALIZE);
-	usbhid_submit_report(hdev, g19data->start_input_report, USB_DIR_IN);
-	usbhid_submit_report(hdev, g19data->start_input_report, USB_DIR_IN);
+	hid_hw_request(hdev, g19data->start_input_report, HID_REQ_GET_REPORT);
+	hid_hw_request(hdev, g19data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g19data->ready, HZ);
 
 	/* Protect data->ready_stages before checking whether we're ready to proceed */

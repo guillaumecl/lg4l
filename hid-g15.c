@@ -224,7 +224,7 @@ static void g15_msg_send(struct hid_device *hdev, u8 msg, u8 value1, u8 value2)
 	g15data->led_report->field[0]->value[1] = value1;
 	g15data->led_report->field[0]->value[2] = value2;
 
-	usbhid_submit_report(hdev, g15data->led_report, USB_DIR_OUT);
+	hid_hw_request(hdev, g15data->led_report, HID_REQ_SET_REPORT);
 }
 
 static void g15_led_set(struct led_classdev *led_cdev,
@@ -501,7 +501,7 @@ static void g15_feature_report_4_send(struct hid_device *hdev, int which)
 		return;
 	}
 
-	usbhid_submit_report(hdev, g15data->feature_report_4, USB_DIR_OUT);
+	hid_hw_request(hdev, g15data->feature_report_4, HID_REQ_SET_REPORT);
 }
 
 /*
@@ -946,7 +946,7 @@ static int g15_probe(struct hid_device *hdev,
 	 * report 6 and wait for us to get a response.
 	 */
 	g15_feature_report_4_send(hdev, G15_REPORT_4_INIT);
-	usbhid_submit_report(hdev, g15data->start_input_report, USB_DIR_IN);
+	hid_hw_request(hdev, g15data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g15data->ready, HZ);
 
 	/* Protect data->ready_stages before checking whether we're ready to proceed */
@@ -970,8 +970,8 @@ static int g15_probe(struct hid_device *hdev,
 	 * report 6 and wait for us to get a response.
 	 */
 	g15_feature_report_4_send(hdev, G15_REPORT_4_FINALIZE);
-	usbhid_submit_report(hdev, g15data->start_input_report, USB_DIR_IN);
-	usbhid_submit_report(hdev, g15data->start_input_report, USB_DIR_IN);
+	hid_hw_request(hdev, g15data->start_input_report, HID_REQ_GET_REPORT);
+	hid_hw_request(hdev, g15data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g15data->ready, HZ);
 
 	/* Protect data->ready_stages before checking whether we're ready to proceed */
