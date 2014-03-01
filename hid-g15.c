@@ -543,7 +543,6 @@ static struct attribute_group g15_attr_group = {
 	.attrs = g15_attrs,
 };
 
-
 static void g15_raw_event_process_input(struct hid_device *hdev,
                                         struct gcommon_data *gdata,
                                         u8 *raw_data)
@@ -621,13 +620,6 @@ static int g15_raw_event(struct hid_device *hdev,
 	struct g15_data *g15data = gdata->data;
 
 	spin_lock_irqsave(&gdata->lock, irq_flags);
-
-	if (unlikely(g15data->need_reset)) {
-		g15_msg_send(hdev, 4, ~g15data->led, 0);
-		g15data->need_reset = 0;
-		spin_unlock_irqrestore(&gdata->lock, irq_flags);
-		return 1;
-	}
 
 	if (unlikely(g15data->ready_stages != G15_READY_STAGE_3)) {
 		switch (report->id) {
@@ -1061,16 +1053,32 @@ static void g15_remove(struct hid_device *hdev)
 	kfree(gdata);
 }
 
-static void __UNUSED g15_post_reset_start(struct hid_device *hdev)
+#ifdef CONFIG_PM
+
+static void g15_post_reset_start(struct hid_device *hdev)
 {
 	unsigned long irq_flags;
 	struct gcommon_data *gdata = hid_get_gdata(hdev);
 	struct g15_data *g15data = gdata->data;
-
+	
 	spin_lock_irqsave(&gdata->lock, irq_flags);
-	g15data->need_reset = 1;
+	g15_msg_send(hdev, 4, ~g15data->led, 0);
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
 }
+
+static int g15_resume(struct hid_device *hdev)
+{
+	g15_post_reset_start(hdev);
+	return 0;
+}
+
+static int g15_reset_resume(struct hid_device *hdev)
+{
+	g15_post_reset_start(hdev);
+	return 0;
+}
+
+#endif /* CONFIG_PM */
 
 static const struct hid_device_id g15_devices[] = {
 	{
@@ -1086,6 +1094,11 @@ static struct hid_driver g15_driver = {
 	.probe			= g15_probe,
 	.remove			= g15_remove,
 	.raw_event		= g15_raw_event,
+
+#ifdef CONFIG_PM
+	.resume                 = g15_resume,
+	.reset_resume           = g15_reset_resume,
+#endif
 };
 
 static int __init g15_init(void)
@@ -1102,4 +1115,5 @@ module_init(g15_init);
 module_exit(g15_exit);
 MODULE_DESCRIPTION("Logitech G15 HID Driver");
 MODULE_AUTHOR("Alistair Buxton (a.j.buxton@gmail.com)");
+MODULE_AUTHOR("Ciubotariu Ciprian (cheepeero@gmx.net)");
 MODULE_LICENSE("GPL");
