@@ -31,9 +31,8 @@
 #include <linux/delay.h>
 
 #include "hid-ids.h"
-#include "usbhid/usbhid.h"
-
 #include "hid-gcommon.h"
+
 #define GFB_NAME "Logitech GamePanel Framebuffer"
 
 /* Framebuffer defines */

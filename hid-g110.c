@@ -30,8 +30,6 @@
 #include <linux/version.h>
 
 #include "hid-ids.h"
-#include "usbhid/usbhid.h"
-
 #include "hid-gcommon.h"
 
 #ifdef __GNUC__
