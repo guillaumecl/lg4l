@@ -1,15 +1,16 @@
 ifneq ($(KERNELRELEASE),)
 # kbuild part
 
-obj-m := hid-g13.o hid-g15.o hid-g19.o hid-gfb.o hid-g110.o hid-ginput.o
+obj-m := hid-g13.o hid-g15.o hid-g15v2.o hid-g19.o hid-gfb.o hid-g110.o hid-ginput.o
 
 else
 
 KVERSION = $(shell uname -r)
 KDIR := /lib/modules/$(KVERSION)/build
-MODULE_INSTALL_DIR := /lib/modules/$(KVERSION)/updates/g-series
-MODS := hid-g13.ko hid-g15.ko hid-g19.ko hid-gfb.ko hid-g110.ko hid-ginput.ko
 PWD := $(shell pwd)
+
+#MODULE_INSTALL_DIR := /lib/modules/$(KVERSION)/updates/g-series
+#MODS := hid-g13.ko hid-g15.ko hid-g15v2.ko hid-g19.ko hid-gfb.ko hid-g110.ko hid-ginput.ko
 
 default:
 	$(MAKE) -C $(KDIR) M=$(PWD)
@@ -22,17 +23,5 @@ install:
 
 TAGS:
 	$(MAKE) -C $(KDIR) M=$(PWD) TAGS
-
-g110test:
-	sudo rmmod hid-g110 || true
-	sudo rmmod hid-gfb || true
-	make
-	sudo make install
-
-g19rmmod:
-	sudo rmmod hid-g19 hid-gfb hid-ginput
-
-g19insmod:
-	sudo modprobe hid-g19
 
 endif
