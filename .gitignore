@@ -10,4 +10,5 @@ Module.symvers
 modules.order
 
 /.project
+/cscope.files
 /tools/fb-test
