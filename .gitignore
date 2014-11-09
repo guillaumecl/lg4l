@@ -11,4 +11,5 @@ modules.order
 
 /.project
 /cscope.files
+/cscope.out
 /tools/fb-test
