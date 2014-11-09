@@ -31,7 +31,7 @@
 #include <linux/delay.h>
 
 #include "hid-ids.h"
-#include "hid-gcommon.h"
+#include "hid-gcore.h"
 
 #define GFB_NAME "Logitech GamePanel Framebuffer"
 
@@ -558,6 +558,15 @@ struct gfb_data *gfb_probe(struct hid_device *hdev,
 			.yres_virtual = 43,
 			.bits_per_pixel = 1,
 		};
+                /*
+                 * The native monochrome format uses vertical bits. Therefore the number of 
+                 * bytes needed to represent the first column is 43/8 (rows/bits) rounded up.
+                 * Additionally, the format requires a padding of 32 bits in front of the
+                 * image data.
+                 *
+                 * Therefore the vbitmap size must be:
+                 *   160 * ceil(43/8) + 32 = 160 * 6 + 32 = 992
+                 */
 		data->fb_vbitmap_size = 992; /*   = 32 + ceil(yres/8) * xres   */
 		break;
 	case GFB_PANEL_TYPE_320_240_16:

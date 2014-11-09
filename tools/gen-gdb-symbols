@@ -8,7 +8,7 @@
 #
 
 
-MODULE_NAMES="hid_g13 hid_g15 hid_g15v2 hid_g19 hid_gfb hid_g110 hid_ginput"
+MODULE_NAMES="hid_g13 hid_g15 hid_g15v2 hid_g19 hid_gfb hid_g110 hid_gcore"
 
 for MODULE_NAME in ${MODULE_NAMES} ; do
     MODULE_FILE=$(/sbin/modinfo $MODULE_NAME | awk '/filename/{print $2}' | 
