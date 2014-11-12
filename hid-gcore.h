@@ -55,8 +55,11 @@ void gcore_input_remove(struct gcore_data *gdata);
 int gcore_leds_probe(struct gcore_data *gdata, const struct led_classdev led_templates[], int led_count);
 void gcore_leds_remove(struct gcore_data *gdata);
 
+struct hid_device * gcore_led_classdev_to_hdev(struct led_classdev * led_cdev);
+
 /** Input helpers. */
 void gcore_input_report_key(struct gcore_data *gdata, int scancode, int value);
+
 /** Common sysfs attributes. */
 ssize_t gcore_name_show(struct device *dev, struct device_attribute *attr, char *buf);
 ssize_t gcore_name_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count);

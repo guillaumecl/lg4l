@@ -98,8 +98,8 @@ struct g13_data {
 	struct hid_report *output_report_3;
 
 	/* led state */
-	u8 rgb[3];		/* keyboard illumination */
-	u8 led;			/* m1, m2, m3 and mr */
+	u8 backlight_rgb[3];	/* keyboard illumination */
+	u8 led_mbtns;		/* m1, m2, m3 and mr */
 
 	/* initialization stages */
 	struct completion ready;
@@ -152,12 +152,11 @@ static const unsigned int g13_default_keymap[G13_KEYS] = {
 	BTN_LEFT, BTN_RIGHT, BTN_MIDDLE, KEY_KBDILLUMTOGGLE
 };
 
-
-static void g13_led_send(struct hid_device *hdev)
+static void g13_led_mbtns_send(struct hid_device *hdev)
 {
 	struct g13_data *g13data = hid_get_g13data(hdev);
 
-	g13data->led_report->field[0]->value[0] = g13data->led&0x0F;
+	g13data->led_report->field[0]->value[0] = g13data->led_mbtns&0x0F;
 	g13data->led_report->field[0]->value[1] = 0x00;
 	g13data->led_report->field[0]->value[2] = 0x00;
 	g13data->led_report->field[0]->value[3] = 0x00;
@@ -165,98 +164,61 @@ static void g13_led_send(struct hid_device *hdev)
 	hid_hw_request(hdev, g13data->led_report, HID_REQ_SET_REPORT);
 }
 
-static void g13_led_set(struct led_classdev *led_cdev,
-                        enum led_brightness value,
-                        int led_num)
+static void g13_led_mbtns_brightness_set(struct led_classdev *led_cdev,
+					 enum led_brightness value)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct g13_data *g13data;
-	u8 mask;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	g13data = hid_get_g13data(hdev);
-
-	mask = 0x01<<led_num;
-	if (value)
-		g13data->led |= mask;
-	else
-		g13data->led &= ~mask;
-
-	g13_led_send(hdev);
-}
-
-static void g13_led_m1_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g13_led_set(led_cdev, value, G13_LED_M1);
-}
-
-static void g13_led_m2_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g13_led_set(led_cdev, value, G13_LED_M2);
-}
-
-static void g13_led_m3_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g13_led_set(led_cdev, value, G13_LED_M3);
-}
-
-static void g13_led_mr_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g13_led_set(led_cdev, value, G13_LED_MR);
-}
-
-static enum led_brightness g13_led_brightness_get(struct led_classdev *led_cdev)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g13_data *g13data;
-	int value = 0;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g13data = hid_get_g13data(hdev);
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g13_data *g13data = gdata->data;
+	u8 mask = 0;
 
 	if (led_cdev == gdata->led_cdev[G13_LED_M1])
-		value = g13data->led & 0x01;
+		mask = 0x01;
 	else if (led_cdev == gdata->led_cdev[G13_LED_M2])
-		value = g13data->led & 0x02;
+		mask = 0x02;
 	else if (led_cdev == gdata->led_cdev[G13_LED_M3])
-		value = g13data->led & 0x04;
+		mask = 0x04;
 	else if (led_cdev == gdata->led_cdev[G13_LED_MR])
-		value = g13data->led & 0x08;
+		mask = 0x08;
+
+	if (mask && value)
+		g13data->led_mbtns |= mask;
 	else
-		dev_info(dev, G13_NAME " error retrieving LED brightness\n");
+		g13data->led_mbtns &= ~mask;
+
+	g13_led_mbtns_send(hdev);
+}
+
+static enum led_brightness g13_led_mbtns_brightness_get(struct led_classdev *led_cdev)
+{
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g13_data *g13data = gdata->data;
+	int value = 0;
+
+	if (led_cdev == gdata->led_cdev[G13_LED_M1])
+		value = g13data->led_mbtns & 0x01;
+	else if (led_cdev == gdata->led_cdev[G13_LED_M2])
+		value = g13data->led_mbtns & 0x02;
+	else if (led_cdev == gdata->led_cdev[G13_LED_M3])
+		value = g13data->led_mbtns & 0x04;
+	else if (led_cdev == gdata->led_cdev[G13_LED_MR])
+		value = g13data->led_mbtns & 0x08;
+	else
+		dev_err(&hdev->dev, G13_NAME " error retrieving LED brightness\n");
 
 	if (value)
 		return LED_FULL;
 	return LED_OFF;
 }
 
-static void g13_rgb_send(struct hid_device *hdev)
+static void g13_led_bl_send(struct hid_device *hdev)
 {
 	struct g13_data *g13data = hid_get_g13data(hdev);
 
-	g13data->backlight_report->field[0]->value[0] = g13data->rgb[0];
-	g13data->backlight_report->field[0]->value[1] = g13data->rgb[1];
-	g13data->backlight_report->field[0]->value[2] = g13data->rgb[2];
+	g13data->backlight_report->field[0]->value[0] = g13data->backlight_rgb[0];
+	g13data->backlight_report->field[0]->value[1] = g13data->backlight_rgb[1];
+	g13data->backlight_report->field[0]->value[2] = g13data->backlight_rgb[2];
 	g13data->backlight_report->field[0]->value[3] = 0x00;
 
 	hid_hw_request(hdev, g13data->backlight_report, HID_REQ_SET_REPORT);
@@ -265,56 +227,34 @@ static void g13_rgb_send(struct hid_device *hdev)
 static void g13_led_bl_brightness_set(struct led_classdev *led_cdev,
                                       enum led_brightness value)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g13_data *g13data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g13data = hid_get_g13data(hdev);
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g13_data *g13data = gdata->data;
 
 	if (led_cdev == gdata->led_cdev[G13_LED_BL_R])
-		g13data->rgb[0] = value;
+		g13data->backlight_rgb[0] = value;
 	else if (led_cdev == gdata->led_cdev[G13_LED_BL_G])
-		g13data->rgb[1] = value;
+		g13data->backlight_rgb[1] = value;
 	else if (led_cdev == gdata->led_cdev[G13_LED_BL_B])
-		g13data->rgb[2] = value;
+		g13data->backlight_rgb[2] = value;
 
-	g13_rgb_send(hdev);
+	g13_led_bl_send(hdev);
 }
 
 static enum led_brightness g13_led_bl_brightness_get(struct led_classdev *led_cdev)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g13_data *g13data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g13data = hid_get_g13data(hdev);
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g13_data *g13data = gdata->data;
 
 	if (led_cdev == gdata->led_cdev[G13_LED_BL_R])
-		return g13data->rgb[0];
+		return g13data->backlight_rgb[0];
 	else if (led_cdev == gdata->led_cdev[G13_LED_BL_G])
-		return g13data->rgb[1];
+		return g13data->backlight_rgb[1];
 	else if (led_cdev == gdata->led_cdev[G13_LED_BL_B])
-		return g13data->rgb[2];
+		return g13data->backlight_rgb[2];
 	else
-		dev_info(dev, G13_NAME " error retrieving LED brightness\n");
+		dev_err(&hdev->dev, G13_NAME " error retrieving LED brightness\n");
 
 	return LED_OFF;
 }
@@ -322,23 +262,23 @@ static enum led_brightness g13_led_bl_brightness_get(struct led_classdev *led_cd
 static const struct led_classdev g13_led_cdevs[LED_COUNT] = {
 	{
 		.name                   = "g13_%d:red:m1",
-		.brightness_set		= g13_led_m1_brightness_set,
-		.brightness_get		= g13_led_brightness_get,
+		.brightness_set		= g13_led_mbtns_brightness_set,
+		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g13_%d:red:m2",
-		.brightness_set		= g13_led_m2_brightness_set,
-		.brightness_get		= g13_led_brightness_get,
+		.brightness_set		= g13_led_mbtns_brightness_set,
+		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g13_%d:red:m3",
-		.brightness_set		= g13_led_m3_brightness_set,
-		.brightness_get		= g13_led_brightness_get,
+		.brightness_set		= g13_led_mbtns_brightness_set,
+		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g13_%d:red:mr",
-		.brightness_set		= g13_led_mr_brightness_set,
-		.brightness_get		= g13_led_brightness_get,
+		.brightness_set		= g13_led_mbtns_brightness_set,
+		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g13_%d:red:bl",
@@ -475,27 +415,22 @@ static int g13_raw_event(struct hid_device *hdev,
 
 #ifdef CONFIG_PM
 
-static void g13_post_reset_start(struct hid_device *hdev)
+static int g13_resume(struct hid_device *hdev)
 {
 	unsigned long irq_flags;
 	struct gcore_data *gdata = hid_get_gdata(hdev);
 
 	spin_lock_irqsave(&gdata->lock, irq_flags);
-	g13_rgb_send(hdev);
-	g13_led_send(hdev);
+	g13_led_bl_send(hdev);
+	g13_led_mbtns_send(hdev);
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
-}
 
-static int g13_resume(struct hid_device *hdev)
-{
-	g13_post_reset_start(hdev);
 	return 0;
 }
 
 static int g13_reset_resume(struct hid_device *hdev)
 {
-	g13_post_reset_start(hdev);
-	return 0;
+	return g13_resume(hdev);
 }
 
 #endif /* CONFIG_PM */
@@ -739,12 +674,12 @@ static int g13_probe(struct hid_device *hdev,
 	/*
 	 * Clear the LEDs
 	 */
-	g13_led_send(hdev);
+	g13data->backlight_rgb[0] = G13_DEFAULT_RED;
+	g13data->backlight_rgb[1] = G13_DEFAULT_GREEN;
+	g13data->backlight_rgb[2] = G13_DEFAULT_BLUE;
 
-	g13data->rgb[0] = G13_DEFAULT_RED;
-	g13data->rgb[1] = G13_DEFAULT_GREEN;
-	g13data->rgb[2] = G13_DEFAULT_BLUE;
-	g13_rgb_send(hdev);
+	g13_led_mbtns_send(hdev);
+	g13_led_bl_send(hdev);
 
 	send_finalize_report(gdata);
 

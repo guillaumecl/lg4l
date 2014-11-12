@@ -298,6 +298,19 @@ void gcore_leds_remove(struct gcore_data *gdata)
 EXPORT_SYMBOL_GPL(gcore_leds_remove);
 
 
+struct hid_device * gcore_led_classdev_to_hdev(struct led_classdev * led_cdev)
+{
+	struct device *dev;
+
+	/* Get the device associated with the led */
+	dev = led_cdev->dev->parent;
+
+	/* Get the hid associated with the device */
+	return container_of(dev, struct hid_device, dev);
+}
+EXPORT_SYMBOL_GPL(gcore_led_classdev_to_hdev);
+
+
 ssize_t gcore_name_show(struct device *dev,
 			struct device_attribute *attr,
 			char *buf)

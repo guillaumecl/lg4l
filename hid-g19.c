@@ -90,8 +90,8 @@ struct g19_data {
 	struct hid_report *output_report_3;
 
 	/* led state */
-	u8 rgb[3];		/* keyboard illumination */
-	u8 led;			/* m1, m2, m3 and mr */
+	u8 backlight_rgb[3];	/* keyboard illumination */
+	u8 led_mbtns;		/* m1, m2, m3 and mr */
 	u8 screen_bl;		/* lcd backlight */
 
 	/* non-standard buttons */
@@ -149,18 +149,110 @@ static const unsigned int g19_default_keymap[G19_KEYS] = {
 	KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP,
 };
 
-
-
-static void g19_led_send(struct hid_device *hdev)
+static void g19_led_mbtns_send(struct hid_device *hdev)
 {
 	struct g19_data *g19data = hid_get_g19data(hdev);
 
-	g19data->led_report->field[0]->value[0] = g19data->led&0xFF;
+	g19data->led_report->field[0]->value[0] = g19data->led_mbtns & 0xFF;
 
 	hid_hw_request(hdev, g19data->led_report, HID_REQ_SET_REPORT);
 }
 
-static void g19_screen_bl_send(struct hid_device *hdev)
+static void g19_led_mbtns_brightness_set(struct led_classdev *led_cdev,
+					 enum led_brightness value)
+{
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g19_data *g19data = gdata->data;
+	u8 mask = 0;
+
+	if (led_cdev == gdata->led_cdev[G19_LED_M1])
+		mask = 0x80;
+	else if (led_cdev == gdata->led_cdev[G19_LED_M2])
+		mask = 0x40;
+	else if (led_cdev == gdata->led_cdev[G19_LED_M3])
+		mask = 0x20;
+	else if (led_cdev == gdata->led_cdev[G19_LED_MR])
+		mask = 0x10;
+
+	if (mask && value)
+		g19data->led_mbtns |= mask;
+	else
+		g19data->led_mbtns &= ~mask;
+
+	g19_led_mbtns_send(hdev);
+}
+
+static enum led_brightness g19_led_mbtns_brightness_get(struct led_classdev *led_cdev)
+{
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g19_data *g19data = gdata->data;
+	int value = 0;
+
+	if (led_cdev == gdata->led_cdev[G19_LED_M1])
+		value = g19data->led_mbtns & 0x80;
+	else if (led_cdev == gdata->led_cdev[G19_LED_M2])
+		value = g19data->led_mbtns & 0x40;
+	else if (led_cdev == gdata->led_cdev[G19_LED_M3])
+		value = g19data->led_mbtns & 0x20;
+	else if (led_cdev == gdata->led_cdev[G19_LED_MR])
+		value = g19data->led_mbtns & 0x10;
+	else
+		dev_err(&hdev->dev, G19_NAME " error retrieving LED brightness\n");
+
+	if (value)
+		return LED_FULL;
+	return LED_OFF;
+}
+
+static void g19_led_bl_send(struct hid_device *hdev)
+{
+	struct g19_data *g19data = hid_get_g19data(hdev);
+
+	g19data->backlight_report->field[0]->value[0] = g19data->backlight_rgb[0];
+	g19data->backlight_report->field[0]->value[1] = g19data->backlight_rgb[1];
+	g19data->backlight_report->field[0]->value[2] = g19data->backlight_rgb[2];
+
+	hid_hw_request(hdev, g19data->backlight_report, HID_REQ_SET_REPORT);
+}
+
+static void g19_led_bl_brightness_set(struct led_classdev *led_cdev,
+                                      enum led_brightness value)
+{
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g19_data *g19data = gdata->data;
+
+	if (led_cdev == gdata->led_cdev[G19_LED_BL_R])
+		g19data->backlight_rgb[0] = value;
+	else if (led_cdev == gdata->led_cdev[G19_LED_BL_G])
+		g19data->backlight_rgb[1] = value;
+	else if (led_cdev == gdata->led_cdev[G19_LED_BL_B])
+		g19data->backlight_rgb[2] = value;
+
+	g19_led_bl_send(hdev);
+}
+
+static enum led_brightness g19_led_bl_brightness_get(struct led_classdev *led_cdev)
+{
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g19_data *g19data = gdata->data;
+
+	if (led_cdev == gdata->led_cdev[G19_LED_BL_R])
+		return g19data->backlight_rgb[0];
+	else if (led_cdev == gdata->led_cdev[G19_LED_BL_G])
+		return g19data->backlight_rgb[1];
+	else if (led_cdev == gdata->led_cdev[G19_LED_BL_B])
+		return g19data->backlight_rgb[2];
+	else
+		dev_err(&hdev->dev, G19_NAME " error retrieving LED brightness\n");
+
+	return LED_OFF;
+}
+
+static void g19_led_screen_bl_send(struct hid_device *hdev)
 {
 	struct usb_interface *intf;
 	struct usb_device *usb_dev;
@@ -191,86 +283,12 @@ static void g19_screen_bl_send(struct hid_device *hdev)
 	}
 }
 
-static void g19_rgb_send(struct hid_device *hdev)
+static void g19_led_screen_bl_set(struct led_classdev *led_cdev,
+				  enum led_brightness value)
 {
-	struct g19_data *g19data = hid_get_g19data(hdev);
-
-	g19data->backlight_report->field[0]->value[0] = g19data->rgb[0];
-	g19data->backlight_report->field[0]->value[1] = g19data->rgb[1];
-	g19data->backlight_report->field[0]->value[2] = g19data->rgb[2];
-
-	hid_hw_request(hdev, g19data->backlight_report, HID_REQ_SET_REPORT);
-}
-
-static void g19_led_set(struct led_classdev *led_cdev,
-                        enum led_brightness value,
-                        int led_num)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct g19_data *g19data;
-	u8 mask;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	g19data = hid_get_g19data(hdev);
-
-	mask = 0x80>>led_num;
-	if (value)
-		g19data->led |= mask;
-	else
-		g19data->led &= ~mask;
-
-	g19_led_send(hdev);
-}
-
-static void g19_led_m1_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g19_led_set(led_cdev, value, G19_LED_M1);
-}
-
-static void g19_led_m2_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g19_led_set(led_cdev, value, G19_LED_M2);
-}
-
-static void g19_led_m3_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g19_led_set(led_cdev, value, G19_LED_M3);
-}
-
-static void g19_led_mr_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	g19_led_set(led_cdev, value, G19_LED_MR);
-}
-
-static void g19_screen_bl_set(struct led_classdev *led_cdev,
-                              enum led_brightness value)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g19_data *g19data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g19data = hid_get_g19data(hdev);
-
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g19_data *g19data = gdata->data;
 
 //    data = [val, 0xe2, 0x12, 0x00, 0x8c, 0x11, 0x00, 0x10, 0x00]
 //    rtype = usb.TYPE_VENDOR | usb.RECIP_INTERFACE
@@ -285,122 +303,20 @@ static void g19_screen_bl_set(struct led_classdev *led_cdev,
 			value = 100;
 		// TEMPORARY
 		g19data->screen_bl = value;
-		g19_screen_bl_send(hdev);
-	} else
-		dev_info(dev, G19_NAME " error retrieving LED brightness\n");
+		g19_led_screen_bl_send(hdev);
+	}
 }
 
-static enum led_brightness g19_led_brightness_get(struct led_classdev *led_cdev)
+static enum led_brightness g19_led_screen_bl_get(struct led_classdev *led_cdev)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g19_data *g19data;
-	int value = 0;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g19data = hid_get_g19data(hdev);
-
-	if (led_cdev == gdata->led_cdev[G19_LED_M1])
-		value = g19data->led & 0x80;
-	else if (led_cdev == gdata->led_cdev[G19_LED_M2])
-		value = g19data->led & 0x40;
-	else if (led_cdev == gdata->led_cdev[G19_LED_M3])
-		value = g19data->led & 0x20;
-	else if (led_cdev == gdata->led_cdev[G19_LED_MR])
-		value = g19data->led & 0x10;
-	else
-		dev_info(dev, G19_NAME " error retrieving LED brightness\n");
-
-	if (value)
-		return LED_FULL;
-	return LED_OFF;
-}
-
-static void g19_led_bl_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g19_data *g19data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g19data = hid_get_g19data(hdev);
-
-	if (led_cdev == gdata->led_cdev[G19_LED_BL_R])
-		g19data->rgb[0] = value;
-	else if (led_cdev == gdata->led_cdev[G19_LED_BL_G])
-		g19data->rgb[1] = value;
-	else if (led_cdev == gdata->led_cdev[G19_LED_BL_B])
-		g19data->rgb[2] = value;
-
-	g19_rgb_send(hdev);
-}
-
-static enum led_brightness g19_led_bl_brightness_get(struct led_classdev *led_cdev)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g19_data *g19data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g19data = hid_get_g19data(hdev);
-
-	if (led_cdev == gdata->led_cdev[G19_LED_BL_R])
-		return g19data->rgb[0];
-	else if (led_cdev == gdata->led_cdev[G19_LED_BL_G])
-		return g19data->rgb[1];
-	else if (led_cdev == gdata->led_cdev[G19_LED_BL_B])
-		return g19data->rgb[2];
-	else
-		dev_info(dev, G19_NAME " error retrieving LED brightness\n");
-
-	return LED_OFF;
-}
-static enum led_brightness g19_screen_bl_get(struct led_classdev *led_cdev)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g19_data *g19data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g19data = hid_get_g19data(hdev);
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g19_data *g19data = gdata->data;
 
 	if (led_cdev == gdata->led_cdev[G19_LED_BL_SCREEN])
 		return g19data->screen_bl;
 	else
-		dev_info(dev, G19_NAME " error retrieving LED brightness\n");
+		dev_err(&hdev->dev, G19_NAME " error retrieving LED brightness\n");
 
 	return LED_OFF;
 }
@@ -411,23 +327,23 @@ static enum led_brightness g19_screen_bl_get(struct led_classdev *led_cdev)
 static const struct led_classdev g19_led_cdevs[] = {
 	{
 		.name                   = "g19_%d:orange:m1",
-		.brightness_set		= g19_led_m1_brightness_set,
-		.brightness_get		= g19_led_brightness_get,
+		.brightness_set		= g19_led_mbtns_brightness_set,
+		.brightness_get		= g19_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g19_%d:orange:m2",
-		.brightness_set		= g19_led_m2_brightness_set,
-		.brightness_get		= g19_led_brightness_get,
+		.brightness_set		= g19_led_mbtns_brightness_set,
+		.brightness_get		= g19_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g19_%d:orange:m3",
-		.brightness_set		= g19_led_m3_brightness_set,
-		.brightness_get		= g19_led_brightness_get,
+		.brightness_set		= g19_led_mbtns_brightness_set,
+		.brightness_get		= g19_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g19_%d:red:mr",
-		.brightness_set		= g19_led_mr_brightness_set,
-		.brightness_get		= g19_led_brightness_get,
+		.brightness_set		= g19_led_mbtns_brightness_set,
+		.brightness_get		= g19_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g19_%d:red:bl",
@@ -446,8 +362,8 @@ static const struct led_classdev g19_led_cdevs[] = {
 	},
 	{
 		.name                   = "g19_%d:white:screen",
-		.brightness_set		= g19_screen_bl_set,
-		.brightness_get		= g19_screen_bl_get,
+		.brightness_set		= g19_led_screen_bl_set,
+		.brightness_get		= g19_led_screen_bl_get,
 	},
 };
 
@@ -557,28 +473,23 @@ static int g19_raw_event(struct hid_device *hdev,
 
 #ifdef CONFIG_PM
 
-static void g19_post_reset_start(struct hid_device *hdev)
+static int g19_resume(struct hid_device *hdev)
 {
 	unsigned long irq_flags;
 	struct gcore_data *gdata = hid_get_gdata(hdev);
 
 	spin_lock_irqsave(&gdata->lock, irq_flags);
-	g19_led_send(hdev);
-	g19_rgb_send(hdev);
-	g19_screen_bl_send(hdev);
+	g19_led_bl_send(hdev);
+	g19_led_mbtns_send(hdev);
+	g19_led_screen_bl_send(hdev);
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
-}
 
-static int g19_resume(struct hid_device *hdev)
-{
-	g19_post_reset_start(hdev);
 	return 0;
 }
 
 static int g19_reset_resume(struct hid_device *hdev)
 {
-	g19_post_reset_start(hdev);
-	return 0;
+	return g19_resume(hdev);
 }
 
 #endif /* CONFIG_PM */
@@ -843,15 +754,14 @@ static int g19_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	/*
 	 * Clear the LEDs
 	 */
-	g19_led_send(hdev);
-
-	g19data->rgb[0] = G19_DEFAULT_RED;
-	g19data->rgb[1] = G19_DEFAULT_GREEN;
-	g19data->rgb[2] = G19_DEFAULT_BLUE;
-	g19_rgb_send(hdev);
-
+	g19data->backlight_rgb[0] = G19_DEFAULT_RED;
+	g19data->backlight_rgb[1] = G19_DEFAULT_GREEN;
+	g19data->backlight_rgb[2] = G19_DEFAULT_BLUE;
 	g19data->screen_bl = G19_DEFAULT_BRIGHTNESS;
-	g19_screen_bl_send(hdev);
+
+	g19_led_bl_send(hdev);
+	g19_led_mbtns_send(hdev);
+	g19_led_screen_bl_send(hdev);
 
 	send_finalize_report(gdata);
 

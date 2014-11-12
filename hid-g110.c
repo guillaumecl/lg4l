@@ -84,7 +84,7 @@ struct g110_data {
 
 	/* led state */
 	u8 backlight_rb[2];	/* keyboard illumination */
-	u8 led;			/* m1, m2, m3 and mr */
+	u8 led_mbtns;		/* m1, m2, m3 and mr */
 
 	/* non-standard buttons */
 	u8 ep1keys[2];
@@ -123,101 +123,64 @@ static const unsigned int g110_default_keymap[G110_KEYS] = {
 	KEY_KBDILLUMTOGGLE
 };
 
-static void g110_led_send(struct hid_device *hdev)
+static void g110_led_mbtns_send(struct hid_device *hdev)
 {
 	struct g110_data *g110data = hid_get_g110data(hdev);
 
-	g110data->led_report->field[0]->value[0] = g110data->led&0xFF;
+	g110data->led_report->field[0]->value[0] = g110data->led_mbtns & 0xFF;
 
 	hid_hw_request(hdev, g110data->led_report, HID_REQ_SET_REPORT);
 }
 
-static void g110_led_set(struct led_classdev *led_cdev,
-                         enum led_brightness value,
-                         int led_num)
+static void g110_led_mbtns_brightness_set(struct led_classdev *led_cdev,
+					  enum led_brightness value)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct g110_data *g110data;
-	u8 mask;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	g110data = hid_get_g110data(hdev);
-
-	mask = 0x01<<led_num;
-	if (value)
-		g110data->led |= mask;
-	else
-		g110data->led &= ~mask;
-
-	g110_led_send(hdev);
-}
-
-static void g110_led_m1_brightness_set(struct led_classdev *led_cdev,
-                                       enum led_brightness value)
-{
-	g110_led_set(led_cdev, value, G110_LED_M1);
-}
-
-static void g110_led_m2_brightness_set(struct led_classdev *led_cdev,
-                                       enum led_brightness value)
-{
-	g110_led_set(led_cdev, value, G110_LED_M2);
-}
-
-static void g110_led_m3_brightness_set(struct led_classdev *led_cdev,
-                                       enum led_brightness value)
-{
-	g110_led_set(led_cdev, value, G110_LED_M3);
-}
-
-static void g110_led_mr_brightness_set(struct led_classdev *led_cdev,
-                                       enum led_brightness value)
-{
-	g110_led_set(led_cdev, value, G110_LED_MR);
-}
-
-static enum led_brightness g110_led_brightness_get(struct led_classdev *led_cdev)
-{
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g110_data *g110data;
-	int value = 0;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g110data = hid_get_g110data(hdev);
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g110_data *g110data = gdata->data;
+	u8 mask = 0;
 
 	if (led_cdev == gdata->led_cdev[G110_LED_M1])
-		value = g110data->led & 0x80;
+		mask = 0x80;
 	else if (led_cdev == gdata->led_cdev[G110_LED_M2])
-		value = g110data->led & 0x40;
+		mask = 0x40;
 	else if (led_cdev == gdata->led_cdev[G110_LED_M3])
-		value = g110data->led & 0x20;
+		mask = 0x20;
 	else if (led_cdev == gdata->led_cdev[G110_LED_MR])
-		value = g110data->led & 0x10;
+		mask = 0x10;
+
+	if (mask && value)
+		g110data->led_mbtns |= mask;
 	else
-		dev_info(dev, G110_NAME " error retrieving LED brightness\n");
+		g110data->led_mbtns &= ~mask;
+
+	g110_led_mbtns_send(hdev);
+}
+
+static enum led_brightness g110_led_mbtns_brightness_get(struct led_classdev *led_cdev)
+{
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g110_data *g110data = gdata->data;
+	int value = 0;
+
+	if (led_cdev == gdata->led_cdev[G110_LED_M1])
+		value = g110data->led_mbtns & 0x80;
+	else if (led_cdev == gdata->led_cdev[G110_LED_M2])
+		value = g110data->led_mbtns & 0x40;
+	else if (led_cdev == gdata->led_cdev[G110_LED_M3])
+		value = g110data->led_mbtns & 0x20;
+	else if (led_cdev == gdata->led_cdev[G110_LED_MR])
+		value = g110data->led_mbtns & 0x10;
+	else
+		dev_err(&hdev->dev, G110_NAME " error retrieving LED brightness\n");
 
 	if (value)
 		return LED_FULL;
 	return LED_OFF;
 }
 
-static void g110_rgb_send(struct hid_device *hdev)
+static void g110_led_bl_send(struct hid_device *hdev)
 {
 	struct g110_data *g110data = hid_get_g110data(hdev);
 
@@ -260,53 +223,31 @@ static void g110_rgb_send(struct hid_device *hdev)
 static void g110_led_bl_brightness_set(struct led_classdev *led_cdev,
                                        enum led_brightness value)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g110_data *g110data;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g110data = hid_get_g110data(hdev);
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g110_data *g110data = gdata->data;
 
 	if (led_cdev == gdata->led_cdev[G110_LED_BL_R])
 		g110data->backlight_rb[0] = value;
 	else if (led_cdev == gdata->led_cdev[G110_LED_BL_B])
 		g110data->backlight_rb[1] = value;
 
-	g110_rgb_send(hdev);
+	g110_led_bl_send(hdev);
 }
 
 static enum led_brightness g110_led_bl_brightness_get(struct led_classdev *led_cdev)
 {
-	struct device *dev;
-	struct hid_device *hdev;
-	struct gcore_data *gdata;
-	struct g110_data *g110data;
+	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
+	struct gcore_data *gdata = hid_get_gdata(hdev);
+	struct g110_data *g110data = gdata->data;
 	int value = 0;
-
-	/* Get the device associated with the led */
-	dev = led_cdev->dev->parent;
-
-	/* Get the hid associated with the device */
-	hdev = container_of(dev, struct hid_device, dev);
-
-	/* Get the underlying data value */
-	gdata = hid_get_gdata(hdev);
-	g110data = hid_get_g110data(hdev);
 
 	if (led_cdev == gdata->led_cdev[G110_LED_BL_R])
 		value = g110data->backlight_rb[0];
 	else if (led_cdev == gdata->led_cdev[G110_LED_BL_B])
 		value = g110data->backlight_rb[1];
 	else
-		dev_info(dev, G110_NAME " error retrieving LED brightness\n");
+		dev_err(&hdev->dev, G110_NAME " error retrieving LED brightness\n");
 
 	if (value)
 		return LED_FULL;
@@ -317,23 +258,23 @@ static enum led_brightness g110_led_bl_brightness_get(struct led_classdev *led_c
 static const struct led_classdev g110_led_cdevs[] = {
 	{
 		.name                   = "g110_%d:orange:m1",
-		.brightness_set		= g110_led_m1_brightness_set,
-		.brightness_get		= g110_led_brightness_get,
+		.brightness_set		= g110_led_mbtns_brightness_set,
+		.brightness_get		= g110_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g110_%d:orange:m2",
-		.brightness_set		= g110_led_m2_brightness_set,
-		.brightness_get		= g110_led_brightness_get,
+		.brightness_set		= g110_led_mbtns_brightness_set,
+		.brightness_get		= g110_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g110_%d:orange:m3",
-		.brightness_set		= g110_led_m3_brightness_set,
-		.brightness_get		= g110_led_brightness_get,
+		.brightness_set		= g110_led_mbtns_brightness_set,
+		.brightness_get		= g110_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g110_%d:red:mr",
-		.brightness_set		= g110_led_mr_brightness_set,
-		.brightness_get		= g110_led_brightness_get,
+		.brightness_set		= g110_led_mbtns_brightness_set,
+		.brightness_get		= g110_led_mbtns_brightness_get,
 	},
 	{
 		.name                   = "g110_%d:red:bl",
@@ -453,27 +394,22 @@ static int g110_raw_event(struct hid_device *hdev,
 
 #ifdef CONFIG_PM
 
-static void g110_post_reset_start(struct hid_device *hdev)
+static int g110_resume(struct hid_device *hdev)
 {
 	unsigned long irq_flags;
 	struct gcore_data *gdata = hid_get_gdata(hdev);
 
 	spin_lock_irqsave(&gdata->lock, irq_flags);
-	g110_rgb_send(hdev);
-	g110_led_send(hdev);
+	g110_led_bl_send(hdev);
+	g110_led_mbtns_send(hdev);
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
-}
 
-static int g110_resume(struct hid_device *hdev)
-{
-	g110_post_reset_start(hdev);
 	return 0;
 }
 
 static int g110_reset_resume(struct hid_device *hdev)
 {
-	g110_post_reset_start(hdev);
-	return 0;
+	return g110_resume(hdev);
 }
 
 #endif /* CONFIG_PM */
@@ -728,11 +664,11 @@ static int g110_probe(struct hid_device *hdev,
 	/*
 	 * Clear the LEDs
 	 */
-	g110_led_send(hdev);
-
 	g110data->backlight_rb[0] = G110_DEFAULT_RED;
 	g110data->backlight_rb[1] = G110_DEFAULT_BLUE;
-	g110_rgb_send(hdev);
+
+	g110_led_mbtns_send(hdev);
+	g110_led_bl_send(hdev);
 
 	send_finalize_report(gdata);
 
