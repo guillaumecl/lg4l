@@ -197,21 +197,21 @@ static void g110_led_bl_send(struct hid_device *hdev)
 	 * just >>4 to make it fit.
 	 */
 
-	// These are just always zero from what I can tell
+	/* These are just always zero from what I can tell */
 	g110data->backlight_report->field[0]->value[1] = 0x00;
 	g110data->backlight_report->field[0]->value[2] = 0x00;
 
-	// If the intensities are the same, "colour" is 0x80
+	/* If the intensities are the same, "colour" is 0x80 */
 	if ( g110data->backlight_rb[0] == g110data->backlight_rb[1] ) {
 		g110data->backlight_report->field[0]->value[0] = 0x80;
 		g110data->backlight_report->field[1]->value[0] = g110data->backlight_rb[0]>>4;
 	}
-	// If the blue value is higher
+	/* If the blue value is higher */
 	else if ( g110data->backlight_rb[1] > g110data->backlight_rb[0] ) {
 		g110data->backlight_report->field[0]->value[0] = 0xff - ( 0x80 * g110data->backlight_rb[0] ) / g110data->backlight_rb[1];
 		g110data->backlight_report->field[1]->value[0] = g110data->backlight_rb[1]>>4;
 	}
-	// If the red value is higher
+	/* If the red value is higher */
 	else {
 		g110data->backlight_report->field[0]->value[0] = ( 0x80 * g110data->backlight_rb[1] ) / g110data->backlight_rb[0];
 		g110data->backlight_report->field[1]->value[0] = g110data->backlight_rb[0]>>4;

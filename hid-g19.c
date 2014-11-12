@@ -290,18 +290,17 @@ static void g19_led_screen_bl_set(struct led_classdev *led_cdev,
 	struct gcore_data *gdata = hid_get_gdata(hdev);
 	struct g19_data *g19data = gdata->data;
 
-//    data = [val, 0xe2, 0x12, 0x00, 0x8c, 0x11, 0x00, 0x10, 0x00]
-//    rtype = usb.TYPE_VENDOR | usb.RECIP_INTERFACE
-//    self.__usbDeviceMutex.acquire()
-//    try:
-//        self.__usbDevice.handleIf1.controlMsg(rtype, 0x0a, data, 0x0, 0x0, self.__write_timeout)
-//    finally:
-//        self.__usbDeviceMutex.release()
+        /* data = [val, 0xe2, 0x12, 0x00, 0x8c, 0x11, 0x00, 0x10, 0x00] */
+        /* rtype = usb.TYPE_VENDOR | usb.RECIP_INTERFACE */
+        /* self.__usbDeviceMutex.acquire() */
+        /* try: */
+        /*     self.__usbDevice.handleIf1.controlMsg(rtype, 0x0a, data, 0x0, 0x0, self.__write_timeout) */
+        /* finally: */
+        /*     self.__usbDeviceMutex.release() */
 
 	if (led_cdev == gdata->led_cdev[G19_LED_BL_SCREEN]) {
 		if (value > 100)
 			value = 100;
-		// TEMPORARY
 		g19data->screen_bl = value;
 		g19_led_screen_bl_send(hdev);
 	}
