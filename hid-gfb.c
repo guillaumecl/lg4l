@@ -493,8 +493,9 @@ static void gfb_free_framebuffer_work(struct work_struct *work)
 
 	if (info) {
 		fb_deferred_io_cleanup(info);
-		unregister_framebuffer(info);
 		usb_free_urb(data->fb_urb);
+
+		unregister_framebuffer(info);
 		framebuffer_release(info);
 
 		data->fb_info = NULL;
