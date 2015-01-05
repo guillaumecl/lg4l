@@ -130,7 +130,7 @@ static const unsigned int g15v2_default_key_map[G15V2_KEYS] = {
 
 static DEVICE_ATTR(fb_node, 0444, gfb_fb_node_show, NULL);
 
-static DEVICE_ATTR(fb_update_rate, 0666,
+static DEVICE_ATTR(fb_update_rate, 0664,
                    gfb_fb_update_rate_show,
                    gfb_fb_update_rate_store);
 
@@ -322,11 +322,11 @@ static const struct led_classdev g15v2_led_cdevs[7] = {
 	},
 };
 
-static DEVICE_ATTR(keymap_index, 0666,
+static DEVICE_ATTR(keymap_index, 0664,
                    ginput_keymap_index_show,
                    ginput_keymap_index_store);
 
-static DEVICE_ATTR(keymap, 0666,
+static DEVICE_ATTR(keymap, 0664,
                    ginput_keymap_show,
                    ginput_keymap_store);
 
@@ -399,7 +399,7 @@ static ssize_t g15v2_name_store(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(name, 0666, g15v2_name_show, g15v2_name_store);
+static DEVICE_ATTR(name, 0664, g15v2_name_show, g15v2_name_store);
 
 static void g15v2_feature_report_4_send(struct hid_device *hdev, int which)
 {
