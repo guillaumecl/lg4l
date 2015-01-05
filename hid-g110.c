@@ -288,7 +288,7 @@ static const struct led_classdev g110_led_cdevs[] = {
 	},
 };
 
-static DEVICE_ATTR(name, 0666, gcore_name_show, gcore_name_store);
+static DEVICE_ATTR(name, 0664, gcore_name_show, gcore_name_store);
 static DEVICE_ATTR(minor, 0444, gcore_minor_show, NULL);
 
 static struct attribute *g110_attrs[] = {

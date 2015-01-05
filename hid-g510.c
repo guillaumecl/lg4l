@@ -295,8 +295,8 @@ static const struct led_classdev g510_led_cdevs[LED_COUNT] = {
 };
 
 static DEVICE_ATTR(fb_node, 0444, gfb_fb_node_show, NULL);
-static DEVICE_ATTR(fb_update_rate, 0666, gfb_fb_update_rate_show, gfb_fb_update_rate_store);
-static DEVICE_ATTR(name, 0666, gcore_name_show, gcore_name_store);
+static DEVICE_ATTR(fb_update_rate, 0664, gfb_fb_update_rate_show, gfb_fb_update_rate_store);
+static DEVICE_ATTR(name, 0664, gcore_name_show, gcore_name_store);
 static DEVICE_ATTR(minor, 0444, gcore_minor_show, NULL);
 
 /*
