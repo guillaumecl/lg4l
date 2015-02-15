@@ -184,8 +184,8 @@ void gcore_input_report_key(struct gcore_data *gdata, int scancode, int value) {
 	struct input_keymap_entry ke = {
 		.flags    = 0,
 		.len      = sizeof(scancode),
-		.index    = scancode,
 	};
+        *((int*) ke.scancode) = scancode;
 
         error = input_get_keycode(idev, &ke);
         if (!error && ke.keycode != KEY_UNKNOWN && ke.keycode != KEY_RESERVED) {
