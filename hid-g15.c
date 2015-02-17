@@ -1,19 +1,19 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Alistair Buxton                                 *
- *   a.j.buxton@gmail.com                                                  *
- *   based on hid-g13.c                                                    *
- *                                                                         *
+ *   Copyright (C) 2010 by Alistair Buxton				   *
+ *   a.j.buxton@gmail.com						   *
+ *   based on hid-g13.c							   *
+ *									   *
  *   This program is free software: you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation, either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This driver is distributed in the hope that it will be useful, but    *
- *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
- *   General Public License for more details.                              *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
+ *   the Free Software Foundation, either version 2 of the License, or	   *
+ *   (at your option) any later version.				   *
+ *									   *
+ *   This driver is distributed in the hope that it will be useful, but	   *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of		   *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU	   *
+ *   General Public License for more details.				   *
+ *									   *
+ *   You should have received a copy of the GNU General Public License	   *
  *   along with this software. If not see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 #include <linux/fb.h>
@@ -32,12 +32,6 @@
 
 #include "hid-ids.h"
 #include "hid-gcore.h"
-
-#ifdef __GNUC__
-#define __UNUSED __attribute__ ((unused))
-#else
-#define __UNUSED
-#endif
 
 #define G15_NAME "Logitech G15"
 
@@ -105,36 +99,36 @@ struct g15_data {
 /*
  * Keymap array indices
  *
- * Key    Byte  Mask Index
- * -----  ----  ---- -----
- * G1     0     0x01  0
- * G13    0     0x04  2
- * LIT    0     0x80  7
- * G7     1     0x01  8
- * G2     1     0x02  9
- * G14    1     0x08 11
- * S2     1     0x80 15
- * G8     2     0x02 17
- * G3     2     0x04 18
- * G15    2     0x10 20
- * S3     2     0x80 23
- * G9     3     0x04 26
- * G4     3     0x08 27
- * G16    3     0x20 29
- * S4     3     0x80 31
- * G10    4     0x08 35
- * G5     4     0x10 36
- * G17    4     0x40 38
- * S5     4     0x80 39
- * M1     5     0x01 40
- * G11    5     0x10 44
- * G6     5     0x20 45
- * M2     6     0x02 49
- * G12    6     0x20 53
- * MR     6     0x40 54
- * M3     7     0x04 58
- * G18    7     0x40 62
- * S1     7     0x80 63
+ * Key	  Byte	Mask Index
+ * -----  ----	---- -----
+ * G1	  0	0x01  0
+ * G13	  0	0x04  2
+ * LIT	  0	0x80  7
+ * G7	  1	0x01  8
+ * G2	  1	0x02  9
+ * G14	  1	0x08 11
+ * S2	  1	0x80 15
+ * G8	  2	0x02 17
+ * G3	  2	0x04 18
+ * G15	  2	0x10 20
+ * S3	  2	0x80 23
+ * G9	  3	0x04 26
+ * G4	  3	0x08 27
+ * G16	  3	0x20 29
+ * S4	  3	0x80 31
+ * G10	  4	0x08 35
+ * G5	  4	0x10 36
+ * G17	  4	0x40 38
+ * S5	  4	0x80 39
+ * M1	  5	0x01 40
+ * G11	  5	0x10 44
+ * G6	  5	0x20 45
+ * M2	  6	0x02 49
+ * G12	  6	0x20 53
+ * MR	  6	0x40 54
+ * M3	  7	0x04 58
+ * G18	  7	0x40 62
+ * S1	  7	0x80 63
  */
 static const unsigned int g15_default_keymap[G15_KEYS] = {
 	KEY_F1, /* G1 */
@@ -217,7 +211,7 @@ static void g15_led_send(struct hid_device *hdev, u8 msg, u8 value1, u8 value2)
 
 static void g15_led_mbtns_send(struct hid_device *hdev)
 {
-	struct g15_data * g15data = hid_get_g15data(hdev);
+	struct g15_data *g15data = hid_get_g15data(hdev);
 
 	g15_led_send(hdev, 0x04, ~(g15data->led_mbtns), 0);
 }
@@ -247,7 +241,8 @@ static void g15_led_mbtns_brightness_set(struct led_classdev *led_cdev,
 	g15_led_mbtns_send(hdev);
 }
 
-static enum led_brightness g15_led_mbtns_brightness_get(struct led_classdev *led_cdev)
+static enum led_brightness
+g15_led_mbtns_brightness_get(struct led_classdev *led_cdev)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -263,16 +258,17 @@ static enum led_brightness g15_led_mbtns_brightness_get(struct led_classdev *led
 	else if (led_cdev == gdata->led_cdev[G15_LED_MR])
 		value = g15data->led_mbtns & 0x08;
 	else
-		dev_err(&hdev->dev, G15_NAME " error retrieving LED brightness\n");
+		dev_err(&hdev->dev,
+			G15_NAME " error retrieving LED brightness\n");
 
 	if (value)
 		return LED_FULL;
 	return LED_OFF;
 }
 
-static void g15_led_bl_send(struct hid_device *hdev) 
+static void g15_led_bl_send(struct hid_device *hdev)
 {
-	struct g15_data * g15data = hid_get_g15data(hdev);
+	struct g15_data *g15data = hid_get_g15data(hdev);
 
 	g15_led_send(hdev, 0x01, g15data->backlight, 0);
 	g15_led_send(hdev, 0x02, g15data->screen_bl, 0);
@@ -280,7 +276,7 @@ static void g15_led_bl_send(struct hid_device *hdev)
 }
 
 static void g15_led_bl_set(struct led_classdev *led_cdev,
-                           enum led_brightness value)
+			   enum led_brightness value)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -316,45 +312,44 @@ static enum led_brightness g15_led_bl_get(struct led_classdev *led_cdev)
 		return g15data->screen_bl;
 	else if (led_cdev == gdata->led_cdev[G15_LED_BL_CONTRAST])
 		return g15data->screen_contrast;
-	else
-		dev_err(&hdev->dev, G15_NAME " error retrieving LED brightness\n");
 
+	dev_err(&hdev->dev, G15_NAME " error retrieving LED brightness\n");
 	return LED_OFF;
 }
 
 static const struct led_classdev g15_led_cdevs[7] = {
 	{
-		.name                   = "g15_%d:orange:m1",
+		.name			= "g15_%d:orange:m1",
 		.brightness_set		= g15_led_mbtns_brightness_set,
 		.brightness_get		= g15_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g15_%d:orange:m2",
+		.name			= "g15_%d:orange:m2",
 		.brightness_set		= g15_led_mbtns_brightness_set,
 		.brightness_get		= g15_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g15_%d:orange:m3",
+		.name			= "g15_%d:orange:m3",
 		.brightness_set		= g15_led_mbtns_brightness_set,
 		.brightness_get		= g15_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g15_%d:blue:mr",
+		.name			= "g15_%d:blue:mr",
 		.brightness_set		= g15_led_mbtns_brightness_set,
 		.brightness_get		= g15_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g15_%d:blue:keys",
+		.name			= "g15_%d:blue:keys",
 		.brightness_set		= g15_led_bl_set,
 		.brightness_get		= g15_led_bl_get,
 	},
 	{
-		.name                   = "g15_%d:white:screen",
+		.name			= "g15_%d:white:screen",
 		.brightness_set		= g15_led_bl_set,
 		.brightness_get		= g15_led_bl_get,
 	},
 	{
-		.name                   = "g15_%d:contrast:screen",
+		.name			= "g15_%d:contrast:screen",
 		.brightness_set		= g15_led_bl_set,
 		.brightness_get		= g15_led_bl_get,
 	},
@@ -362,7 +357,8 @@ static const struct led_classdev g15_led_cdevs[7] = {
 
 
 static DEVICE_ATTR(fb_node, 0444, gfb_fb_node_show, NULL);
-static DEVICE_ATTR(fb_update_rate, 0664, gfb_fb_update_rate_show, gfb_fb_update_rate_store);
+static DEVICE_ATTR(fb_update_rate, 0664,
+		   gfb_fb_update_rate_show, gfb_fb_update_rate_store);
 static DEVICE_ATTR(name, 0664, gcore_name_show, gcore_name_store);
 static DEVICE_ATTR(minor, 0444, gcore_minor_show, NULL);
 
@@ -379,8 +375,8 @@ static struct attribute_group g15_attr_group = {
 };
 
 static void g15_raw_event_process_input(struct hid_device *hdev,
-                                        struct gcore_data *gdata,
-                                        u8 *raw_data)
+					struct gcore_data *gdata,
+					u8 *raw_data)
 {
 	struct input_dev *idev = gdata->input_dev;
 	int scancode;
@@ -428,8 +424,8 @@ static void g15_raw_event_process_input(struct hid_device *hdev,
 }
 
 static int g15_raw_event(struct hid_device *hdev,
-                         struct hid_report *report,
-                         u8 *raw_data, int size)
+			 struct hid_report *report,
+			 u8 *raw_data, int size)
 {
 	/*
 	* On initialization receive a 258 byte message with
@@ -447,11 +443,11 @@ static int g15_raw_event(struct hid_device *hdev,
 			if (!(g15data->ready_stages & G15_READY_SUBSTAGE_1))
 				g15data->ready_stages |= G15_READY_SUBSTAGE_1;
 			else if (g15data->ready_stages & G15_READY_SUBSTAGE_4 &&
-			         !(g15data->ready_stages & G15_READY_SUBSTAGE_5)
-			        )
+				 !(g15data->ready_stages & G15_READY_SUBSTAGE_5)
+				)
 				g15data->ready_stages |= G15_READY_SUBSTAGE_5;
 			else if (g15data->ready_stages & G15_READY_SUBSTAGE_6 &&
-			         raw_data[1] >= 0x80)
+				 raw_data[1] >= 0x80)
 				g15data->ready_stages |= G15_READY_SUBSTAGE_7;
 			break;
 		case 1:
@@ -488,7 +484,7 @@ static int g15_resume(struct hid_device *hdev)
 {
 	unsigned long irq_flags;
 	struct gcore_data *gdata = hid_get_gdata(hdev);
-	
+
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	g15_led_mbtns_send(hdev);
 	g15_led_bl_send(hdev);
@@ -550,15 +546,17 @@ static int read_feature_reports(struct gcore_data *gdata)
 			g15data->feature_report_4
 			    = g15data->led_report
 			      = g15data->start_input_report
-			        = g15data->backlight_report
-			          = report;
+				= g15data->backlight_report
+				  = report;
 			break;
 		default:
 			break;
 		}
-		dbg_hid(G15_NAME " Feature report: id=%u type=%u size=%u maxfield=%u report_count=%u\n",
-		        report->id, report->type, report->size,
-		        report->maxfield, report->field[0]->report_count);
+		dbg_hid(
+			"%s Feature report: id=%u type=%u size=%u maxfield=%u report_count=%u\n",
+			gdata->name,
+			report->id, report->type, report->size,
+			report->maxfield, report->field[0]->report_count);
 	}
 
 	if (list_empty(output_report_list)) {
@@ -568,13 +566,16 @@ static int read_feature_reports(struct gcore_data *gdata)
 	dbg_hid(G15_NAME " output report found\n");
 
 	list_for_each_entry(report, output_report_list, list) {
-		dbg_hid(G15_NAME " output report %d found size=%u maxfield=%u\n", report->id, report->size, report->maxfield);
+		dbg_hid("%s output report %d found size=%u maxfield=%u\n",
+			gdata->name,
+			report->id, report->size, report->maxfield);
 		if (report->maxfield > 0) {
-			dbg_hid(G15_NAME " offset=%u size=%u count=%u type=%u\n",
-			        report->field[0]->report_offset,
-			        report->field[0]->report_size,
-			        report->field[0]->report_count,
-			        report->field[0]->report_type);
+			dbg_hid("%s offset=%u size=%u count=%u type=%u\n",
+				gdata->name,
+				report->field[0]->report_offset,
+				report->field[0]->report_size,
+				report->field[0]->report_count,
+				report->field[0]->report_type);
 		}
 		switch (report->id) {
 		case 0x03:
@@ -601,10 +602,12 @@ static void wait_ready(struct gcore_data *gdata)
 	 */
 	wait_for_completion_timeout(&g15data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	if (g15data->ready_stages != G15_READY_STAGE_1) {
-		dev_warn(&hdev->dev, G15_NAME " hasn't completed stage 1 yet, forging ahead with initialization\n");
+		dev_warn(&hdev->dev,
+			 "%s hasn't completed stage 1 yet, forging ahead with initialization\n",
+			 gdata->name);
 		/* Force the stage */
 		g15data->ready_stages = G15_READY_STAGE_1;
 	}
@@ -620,10 +623,12 @@ static void wait_ready(struct gcore_data *gdata)
 	hid_hw_request(hdev, g15data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g15data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	if (g15data->ready_stages != G15_READY_STAGE_2) {
-		dev_warn(&hdev->dev, G15_NAME " hasn't completed stage 2 yet, forging ahead with initialization\n");
+		dev_warn(&hdev->dev,
+			 "%s hasn't completed stage 2 yet, forging ahead with initialization\n",
+			 gdata->name);
 		/* Force the stage */
 		g15data->ready_stages = G15_READY_STAGE_2;
 	}
@@ -632,22 +637,22 @@ static void wait_ready(struct gcore_data *gdata)
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
 }
 
-static void send_finalize_report(struct gcore_data *gdata) 
+static void send_finalize_report(struct gcore_data *gdata)
 {
 	struct g15_data *g15data = gdata->data;
 	struct hid_device *hdev = gdata->hdev;
 	unsigned long irq_flags;
 
 	/*
-	 * Send the finalize report, then follow with the input report to trigger
-	 * report 6 and wait for us to get a response.
+	 * Send the finalize report, then follow with the input report to
+	 * trigger report 6 and wait for us to get a response.
 	 */
 	g15_feature_report_4_send(hdev, G15_REPORT_4_FINALIZE);
 	hid_hw_request(hdev, g15data->start_input_report, HID_REQ_GET_REPORT);
 	hid_hw_request(hdev, g15data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g15data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 
 	if (g15data->ready_stages != G15_READY_STAGE_3) {
@@ -662,7 +667,7 @@ static void send_finalize_report(struct gcore_data *gdata)
 }
 
 static int g15_probe(struct hid_device *hdev,
-                     const struct hid_device_id *id)
+		     const struct hid_device_id *id)
 {
 	int error;
 	struct gcore_data *gdata;
@@ -679,7 +684,6 @@ static int g15_probe(struct hid_device *hdev,
 
 	g15data = kzalloc(sizeof(struct g15_data), GFP_KERNEL);
 	if (g15data == NULL) {
-		dev_err(&hdev->dev, "%s can't allocate space for device attributes\n", gdata->name);
 		error = -ENOMEM;
 		goto err_cleanup_gdata;
 	}
@@ -688,23 +692,31 @@ static int g15_probe(struct hid_device *hdev,
 
 	error = gcore_hid_open(gdata);
 	if (error) {
-		dev_err(&hdev->dev, "%s error opening hid device\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error opening hid device\n",
+			gdata->name);
 		goto err_cleanup_g15data;
 	}
 
-	error = gcore_input_probe(gdata, g15_default_keymap, ARRAY_SIZE(g15_default_keymap));
+	error = gcore_input_probe(gdata, g15_default_keymap,
+				  ARRAY_SIZE(g15_default_keymap));
 	if (error) {
-		dev_err(&hdev->dev, "%s error registering input device\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error registering input device\n",
+			gdata->name);
 		goto err_cleanup_hid;
 	}
 
 	error = read_feature_reports(gdata);
 	if (error) {
-		dev_err(&hdev->dev, "%s error reading feature reports\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error reading feature reports\n",
+			gdata->name);
 		goto err_cleanup_input;
 	}
 
-	error = gcore_leds_probe(gdata, g15_led_cdevs, ARRAY_SIZE(g15_led_cdevs));
+	error = gcore_leds_probe(gdata, g15_led_cdevs,
+				 ARRAY_SIZE(g15_led_cdevs));
 	if (error) {
 		dev_err(&hdev->dev, "%s error registering leds\n", gdata->name);
 		goto err_cleanup_input;
@@ -712,13 +724,15 @@ static int g15_probe(struct hid_device *hdev,
 
 	gdata->gfb_data = gfb_probe(hdev, GFB_PANEL_TYPE_160_43_1);
 	if (gdata->gfb_data == NULL) {
-		dev_err(&hdev->dev, G15_NAME " error registering framebuffer\n");
+		dev_err(&hdev->dev,
+			G15_NAME " error registering framebuffer\n");
 		goto err_cleanup_leds;
 	}
 
 	error = sysfs_create_group(&(hdev->dev.kobj), &g15_attr_group);
 	if (error) {
-		dev_err(&hdev->dev, G15_NAME " failed to create sysfs group attributes\n");
+		dev_err(&hdev->dev,
+			G15_NAME " failed to create sysfs group attributes\n");
 		goto err_cleanup_gfb;
 	}
 
@@ -742,7 +756,6 @@ err_cleanup_gfb:
 
 err_cleanup_leds:
 	gcore_leds_remove(gdata);
-	
 err_cleanup_input:
 	gcore_input_remove(gdata);
 
@@ -778,9 +791,7 @@ static void g15_remove(struct hid_device *hdev)
 }
 
 static const struct hid_device_id g15_devices[] = {
-	{
-		HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G15_LCD)
-	},
+	{ HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G15_LCD) },
 	{ }
 };
 MODULE_DEVICE_TABLE(hid, g15_devices);
@@ -793,8 +804,8 @@ static struct hid_driver g15_driver = {
 	.raw_event		= g15_raw_event,
 
 #ifdef CONFIG_PM
-	.resume                 = g15_resume,
-	.reset_resume           = g15_reset_resume,
+	.resume			= g15_resume,
+	.reset_resume		= g15_reset_resume,
 #endif
 };
 

@@ -1,19 +1,19 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Alistair Buxton                                 *
- *   a.j.buxton@gmail.com                                                  *
- *   based on hid-g13.c                                                    *
- *                                                                         *
+ *   Copyright (C) 2010 by Alistair Buxton				   *
+ *   a.j.buxton@gmail.com						   *
+ *   based on hid-g13.c							   *
+ *									   *
  *   This program is free software: you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation, either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This driver is distributed in the hope that it will be useful, but    *
- *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
- *   General Public License for more details.                              *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
+ *   the Free Software Foundation, either version 2 of the License, or	   *
+ *   (at your option) any later version.				   *
+ *									   *
+ *   This driver is distributed in the hope that it will be useful, but	   *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of		   *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU	   *
+ *   General Public License for more details.				   *
+ *									   *
+ *   You should have received a copy of the GNU General Public License	   *
  *   along with this software. If not see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 #include <linux/fb.h>
@@ -32,12 +32,6 @@
 
 #include "hid-ids.h"
 #include "hid-gcore.h"
-
-#ifdef __GNUC__
-#define __UNUSED __attribute__ ((unused))
-#else
-#define __UNUSED
-#endif
 
 #define G510_NAME "Logitech G510"
 
@@ -153,7 +147,7 @@ static void g510_led_send(struct hid_device *hdev, u8 msg, u8 value1, u8 value2)
 	hid_hw_request(hdev, g510data->led_report, HID_REQ_SET_REPORT);
 }
 
-static void g510_led_mbtns_send(struct hid_device *hdev) 
+static void g510_led_mbtns_send(struct hid_device *hdev)
 {
 	struct g510_data *g510data = hid_get_g510data(hdev);
 
@@ -185,7 +179,8 @@ static void g510_led_mbtns_brightness_set(struct led_classdev *led_cdev,
 	g510_led_mbtns_send(hdev);
 }
 
-static enum led_brightness g510_led_mbtns_brightness_get(struct led_classdev *led_cdev)
+static enum led_brightness
+g510_led_mbtns_brightness_get(struct led_classdev *led_cdev)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -201,7 +196,8 @@ static enum led_brightness g510_led_mbtns_brightness_get(struct led_classdev *le
 	else if (led_cdev == gdata->led_cdev[G510_LED_MR])
 		value = g510data->led_mbtns & 0x08;
 	else
-		dev_err(&hdev->dev, G510_NAME " error retrieving LED brightness\n");
+		dev_err(&hdev->dev,
+			G510_NAME " error retrieving LED brightness\n");
 
 	if (value)
 		return LED_FULL;
@@ -213,16 +209,18 @@ static void g510_led_bl_send(struct hid_device *hdev)
 {
 	struct g510_data *g510data = hid_get_g510data(hdev);
 
-	g510data->backlight_report->field[0]->value[0] = g510data->backlight_rgb[0];
-	g510data->backlight_report->field[0]->value[1] = g510data->backlight_rgb[1];
-	g510data->backlight_report->field[0]->value[2] = g510data->backlight_rgb[2];
-	g510data->backlight_report->field[0]->value[3] = 0x00;
+	struct hid_field *field0 = g510data->backlight_report->field[0];
+
+	field0->value[0] = g510data->backlight_rgb[0];
+	field0->value[1] = g510data->backlight_rgb[1];
+	field0->value[2] = g510data->backlight_rgb[2];
+	field0->value[3] = 0x00;
 
 	hid_hw_request(hdev, g510data->backlight_report, HID_REQ_SET_REPORT);
 }
 
 static void g510_led_bl_brightness_set(struct led_classdev *led_cdev,
-                                       enum led_brightness value)
+				       enum led_brightness value)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -238,7 +236,8 @@ static void g510_led_bl_brightness_set(struct led_classdev *led_cdev,
 	g510_led_bl_send(hdev);
 }
 
-static enum led_brightness g510_led_bl_brightness_get(struct led_classdev *led_cdev)
+static enum led_brightness
+g510_led_bl_brightness_get(struct led_classdev *led_cdev)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -250,52 +249,52 @@ static enum led_brightness g510_led_bl_brightness_get(struct led_classdev *led_c
 		return g510data->backlight_rgb[1];
 	else if (led_cdev == gdata->led_cdev[G510_LED_BL_B])
 		return g510data->backlight_rgb[2];
-	else
-		dev_err(&hdev->dev, G510_NAME " error retrieving LED brightness\n");
 
+	dev_err(&hdev->dev, G510_NAME " error retrieving LED brightness\n");
 	return LED_OFF;
 }
 
 static const struct led_classdev g510_led_cdevs[LED_COUNT] = {
 	{
-		.name                   = "g510_%d:orange:m1",
+		.name			= "g510_%d:orange:m1",
 		.brightness_set		= g510_led_mbtns_brightness_set,
 		.brightness_get		= g510_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g510_%d:orange:m2",
+		.name			= "g510_%d:orange:m2",
 		.brightness_set		= g510_led_mbtns_brightness_set,
 		.brightness_get		= g510_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g510_%d:orange:m3",
+		.name			= "g510_%d:orange:m3",
 		.brightness_set		= g510_led_mbtns_brightness_set,
 		.brightness_get		= g510_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g510_%d:red:mr",
+		.name			= "g510_%d:red:mr",
 		.brightness_set		= g510_led_mbtns_brightness_set,
 		.brightness_get		= g510_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g510_%d:red:bl",
+		.name			= "g510_%d:red:bl",
 		.brightness_set		= g510_led_bl_brightness_set,
 		.brightness_get		= g510_led_bl_brightness_get,
 	},
 	{
-		.name                   = "g510_%d:green:bl",
+		.name			= "g510_%d:green:bl",
 		.brightness_set		= g510_led_bl_brightness_set,
 		.brightness_get		= g510_led_bl_brightness_get,
 	},
 	{
-		.name                   = "g510_%d:blue:bl",
+		.name			= "g510_%d:blue:bl",
 		.brightness_set		= g510_led_bl_brightness_set,
 		.brightness_get		= g510_led_bl_brightness_get,
 	},
 };
 
 static DEVICE_ATTR(fb_node, 0444, gfb_fb_node_show, NULL);
-static DEVICE_ATTR(fb_update_rate, 0664, gfb_fb_update_rate_show, gfb_fb_update_rate_store);
+static DEVICE_ATTR(fb_update_rate, 0664,
+		   gfb_fb_update_rate_show, gfb_fb_update_rate_store);
 static DEVICE_ATTR(name, 0664, gcore_name_show, gcore_name_store);
 static DEVICE_ATTR(minor, 0444, gcore_minor_show, NULL);
 
@@ -316,8 +315,8 @@ static struct attribute_group g510_attr_group = {
 };
 
 static void g510_raw_event_process_input(struct hid_device *hdev,
-        struct gcore_data *gdata,
-        u8 *raw_data)
+	struct gcore_data *gdata,
+	u8 *raw_data)
 {
 	struct input_dev *idev = gdata->input_dev;
 	int scancode;
@@ -325,8 +324,11 @@ static void g510_raw_event_process_input(struct hid_device *hdev,
 	int i;
 	int mask;
 
-
-	raw_data[4] &= 0xFE; /* This bit turns on and off at random - G510 - does it do this? seems safe to leave here in case */
+	/*
+	 * This bit turns on and off at random.
+	 * G510: does it do this? seems safe to leave here in case
+	 */
+	raw_data[4] &= 0xFE;
 
 	for (i = 0, mask = 0x01; i < 8; i++, mask <<= 1) {
 		scancode = i;
@@ -350,8 +352,8 @@ static void g510_raw_event_process_input(struct hid_device *hdev,
 }
 
 static int g510_raw_event(struct hid_device *hdev,
-                          struct hid_report *report,
-                          u8 *raw_data, int size)
+			  struct hid_report *report,
+			  u8 *raw_data, int size)
 {
 	/*
 	* On initialization receive a 258 byte message with
@@ -369,11 +371,11 @@ static int g510_raw_event(struct hid_device *hdev,
 			if (!(g510data->ready_stages & G510_READY_SUBSTAGE_1))
 				g510data->ready_stages |= G510_READY_SUBSTAGE_1;
 			else if (g510data->ready_stages & G510_READY_SUBSTAGE_4 &&
-			         !(g510data->ready_stages & G510_READY_SUBSTAGE_5)
-			        )
+				 !(g510data->ready_stages & G510_READY_SUBSTAGE_5)
+				)
 				g510data->ready_stages |= G510_READY_SUBSTAGE_5;
 			else if (g510data->ready_stages & G510_READY_SUBSTAGE_6 &&
-			         raw_data[1] >= 0x80)
+				 raw_data[1] >= 0x80)
 				g510data->ready_stages |= G510_READY_SUBSTAGE_7;
 			break;
 		case 1:
@@ -482,25 +484,29 @@ static int read_feature_reports(struct gcore_data *gdata)
 		default:
 			break;
 		}
-		dbg_hid(G510_NAME " Feature report: id=%u type=%u size=%u maxfield=%u report_count=%u\n",
-		        report->id, report->type, report->size,
-		        report->maxfield, report->field[0]->report_count);
+		dbg_hid("%s Feature report: id=%u type=%u size=%u maxfield=%u report_count=%u\n",
+			gdata->name,
+			report->id, report->type, report->size,
+			report->maxfield, report->field[0]->report_count);
 	}
 
 	if (list_empty(output_report_list)) {
 		dev_err(&hdev->dev, "no output report found\n");
 		return -ENODEV;
 	}
-	dbg_hid(G510_NAME " output report found\n");
+	dbg_hid("%s output report found\n", gdata->name);
 
 	list_for_each_entry(report, output_report_list, list) {
-		dbg_hid(G510_NAME " output report %d found size=%u maxfield=%u\n", report->id, report->size, report->maxfield);
+		dbg_hid("%s output report %d found size=%u maxfield=%u\n",
+			gdata->name,
+			report->id, report->size, report->maxfield);
 		if (report->maxfield > 0) {
-			dbg_hid(G510_NAME " offset=%u size=%u count=%u type=%u\n",
-			        report->field[0]->report_offset,
-			        report->field[0]->report_size,
-			        report->field[0]->report_count,
-			        report->field[0]->report_type);
+			dbg_hid("%s offset=%u size=%u count=%u type=%u\n",
+				gdata->name,
+				report->field[0]->report_offset,
+				report->field[0]->report_size,
+				report->field[0]->report_count,
+				report->field[0]->report_type);
 		}
 		switch (report->id) {
 		case 0x03:
@@ -527,10 +533,12 @@ static void wait_ready(struct gcore_data *gdata)
 	 */
 	wait_for_completion_timeout(&g510data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	if (g510data->ready_stages != G510_READY_STAGE_1) {
-		dev_warn(&hdev->dev, G510_NAME " hasn't completed stage 1 yet, forging ahead with initialization\n");
+		dev_warn(&hdev->dev,
+			 "%s hasn't completed stage 1 yet, forging ahead with initialization\n",
+			gdata->name);
 		/* Force the stage */
 		g510data->ready_stages = G510_READY_STAGE_1;
 	}
@@ -546,10 +554,12 @@ static void wait_ready(struct gcore_data *gdata)
 	hid_hw_request(hdev, g510data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g510data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	if (g510data->ready_stages != G510_READY_STAGE_2) {
-		dev_warn(&hdev->dev, G510_NAME " hasn't completed stage 2 yet, forging ahead with initialization\n");
+		dev_warn(&hdev->dev,
+			 "%s hasn't completed stage 2 yet, forging ahead with initialization\n",
+			gdata->name);
 		/* Force the stage */
 		g510data->ready_stages = G510_READY_STAGE_2;
 	}
@@ -558,22 +568,22 @@ static void wait_ready(struct gcore_data *gdata)
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
 }
 
-static void send_finalize_report(struct gcore_data *gdata) 
+static void send_finalize_report(struct gcore_data *gdata)
 {
 	struct g510_data *g510data = gdata->data;
 	struct hid_device *hdev = gdata->hdev;
 	unsigned long irq_flags;
 
 	/*
-	 * Send the finalize report, then follow with the input report to trigger
-	 * report 6 and wait for us to get a response.
+	 * Send the finalize report, then follow with the input report to
+	 * trigger report 6 and wait for us to get a response.
 	 */
 	g510_feature_report_4_send(hdev, G510_REPORT_4_FINALIZE);
 	hid_hw_request(hdev, g510data->start_input_report, HID_REQ_GET_REPORT);
 	hid_hw_request(hdev, g510data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g510data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 
 	if (g510data->ready_stages != G510_READY_STAGE_3) {
@@ -588,7 +598,7 @@ static void send_finalize_report(struct gcore_data *gdata)
 }
 
 static int g510_probe(struct hid_device *hdev,
-                      const struct hid_device_id *id)
+		      const struct hid_device_id *id)
 {
 	int error;
 	struct gcore_data *gdata;
@@ -596,16 +606,17 @@ static int g510_probe(struct hid_device *hdev,
 
 	dev_dbg(&hdev->dev, "Logitech G510 HID hardware probe...");
 
-        gdata = gcore_alloc_data(G510_NAME, hdev);
+	gdata = gcore_alloc_data(G510_NAME, hdev);
 	if (gdata == NULL) {
-		dev_err(&hdev->dev, G510_NAME " can't allocate space for device attributes\n");
+		dev_err(&hdev->dev,
+			G510_NAME
+			" can't allocate space for device attributes\n");
 		error = -ENOMEM;
 		goto err_no_cleanup;
 	}
 
 	g510data = kzalloc(sizeof(struct g510_data), GFP_KERNEL);
 	if (g510data == NULL) {
-		dev_err(&hdev->dev, "can't allocate space for Logitech G510 device attributes\n");
 		error = -ENOMEM;
 		goto err_cleanup_gdata;
 	}
@@ -614,23 +625,31 @@ static int g510_probe(struct hid_device *hdev,
 
 	error = gcore_hid_open(gdata);
 	if (error) {
-		dev_err(&hdev->dev, "%s error opening hid device\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error opening hid device\n",
+			gdata->name);
 		goto err_cleanup_g510data;
-	}	
+	}
 
-	error = gcore_input_probe(gdata, g510_default_keymap, ARRAY_SIZE(g510_default_keymap));
+	error = gcore_input_probe(gdata, g510_default_keymap,
+				  ARRAY_SIZE(g510_default_keymap));
 	if (error) {
-		dev_err(&hdev->dev, "%s error registering input device\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error registering input device\n",
+			gdata->name);
 		goto err_cleanup_hid;
 	}
 
 	error = read_feature_reports(gdata);
 	if (error) {
-		dev_err(&hdev->dev, "%s error reading feature reports\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error reading feature reports\n",
+			gdata->name);
 		goto err_cleanup_input;
 	}
 
-	error = gcore_leds_probe(gdata, g510_led_cdevs, ARRAY_SIZE(g510_led_cdevs));
+	error = gcore_leds_probe(gdata, g510_led_cdevs,
+				 ARRAY_SIZE(g510_led_cdevs));
 	if (error) {
 		dev_err(&hdev->dev, "%s error registering leds\n", gdata->name);
 		goto err_cleanup_input;
@@ -673,7 +692,7 @@ err_cleanup_gfb:
 
 err_cleanup_leds:
 	gcore_leds_remove(gdata);
-	
+
 err_cleanup_input:
 	gcore_input_remove(gdata);
 
@@ -710,12 +729,8 @@ static void g510_remove(struct hid_device *hdev)
 
 
 static const struct hid_device_id g510_devices[] = {
-	{
-		HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G510_LCD)
-	},
-	{
-		HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G510_AUDIO_LCD)
-	},
+	{ HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G510_LCD) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G510_AUDIO_LCD) },
 	{ }
 };
 MODULE_DEVICE_TABLE(hid, g510_devices);
@@ -728,8 +743,8 @@ static struct hid_driver g510_driver = {
 	.raw_event		= g510_raw_event,
 
 #ifdef CONFIG_PM
-	.resume                 = g510_resume,
-	.reset_resume           = g510_reset_resume,
+	.resume			= g510_resume,
+	.reset_resume		= g510_reset_resume,
 #endif
 };
 

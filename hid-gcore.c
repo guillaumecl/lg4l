@@ -1,17 +1,17 @@
 /***************************************************************************
- *   Copyright (C) 2014 by Ciprian Ciubotariu <cheepeero@gmx.net>          *
- *                                                                         *
+ *   Copyright (C) 2014 by Ciprian Ciubotariu <cheepeero@gmx.net>	   *
+ *									   *
  *   This program is free software: you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation, either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This driver is distributed in the hope that it will be useful, but    *
- *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
- *   General Public License for more details.                              *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
+ *   the Free Software Foundation, either version 2 of the License, or	   *
+ *   (at your option) any later version.				   *
+ *									   *
+ *   This driver is distributed in the hope that it will be useful, but	   *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of		   *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU	   *
+ *   General Public License for more details.				   *
+ *									   *
+ *   You should have received a copy of the GNU General Public License	   *
  *   along with this software. If not see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 #include <linux/hid.h>
@@ -22,24 +22,27 @@
 
 #include "hid-gcore.h"
 
-struct gcore_data * gcore_alloc_data(const char * name, struct hid_device *hdev)
+struct gcore_data *gcore_alloc_data(const char *name, struct hid_device *hdev)
 {
-	struct gcore_data * gdata = kzalloc(sizeof(struct gcore_data), GFP_KERNEL);
+	struct gcore_data *gdata = kzalloc(sizeof(struct gcore_data),
+					   GFP_KERNEL);
+
 	if (gdata == NULL) {
-		dev_err(&hdev->dev, "%s error allocating memory for device attributes\n", name);
+		dev_err(&hdev->dev,
+			"%s error allocating memory for device attributes\n",
+			name);
 		return NULL;
 	}
-	
+
 	gdata->name = kzalloc((strlen(name) + 1) * sizeof(char), GFP_KERNEL);
-	if (gdata->name == NULL) { 
-		dev_err(&hdev->dev, "%s error allocating memory for device name\n", name);
+	if (gdata->name == NULL) {
 		kfree(gdata);
 		return NULL;
 	}
 	strcpy(gdata->name, name);
 
 	spin_lock_init(&gdata->lock);
-	
+
 	gdata->hdev = hdev;
 	hid_set_drvdata(hdev, gdata);
 
@@ -48,7 +51,7 @@ struct gcore_data * gcore_alloc_data(const char * name, struct hid_device *hdev)
 EXPORT_SYMBOL_GPL(gcore_alloc_data);
 
 
-void gcore_free_data(struct gcore_data * gdata)
+void gcore_free_data(struct gcore_data *gdata)
 {
 	kfree(gdata->name);
 	kfree(gdata);
@@ -56,7 +59,7 @@ void gcore_free_data(struct gcore_data * gdata)
 EXPORT_SYMBOL_GPL(gcore_free_data);
 
 
-int gcore_hid_open(struct gcore_data * gdata)
+int gcore_hid_open(struct gcore_data *gdata)
 {
 	struct hid_device *hdev = gdata->hdev;
 	int error;
@@ -66,12 +69,14 @@ int gcore_hid_open(struct gcore_data * gdata)
 	/* Parse the device reports and start it up */
 	error = hid_parse(hdev);
 	if (error) {
-		dev_err(&hdev->dev, "%s device report parse failed\n", gdata->name);
+		dev_err(&hdev->dev, "%s device report parse failed\n",
+			gdata->name);
 		error = -EINVAL;
 		goto err_no_cleanup;
 	}
 
-	error = hid_hw_start(hdev, HID_CONNECT_DEFAULT | HID_CONNECT_HIDINPUT_FORCE);
+	error = hid_hw_start(hdev,
+			     HID_CONNECT_DEFAULT | HID_CONNECT_HIDINPUT_FORCE);
 	if (error) {
 		dev_err(&hdev->dev, "%s hardware start failed\n", gdata->name);
 		error = -EINVAL;
@@ -82,7 +87,9 @@ int gcore_hid_open(struct gcore_data * gdata)
 
 	error = hdev->ll_driver->open(hdev);
 	if (error) {
-		dev_err(&hdev->dev, "%s failed to open input interrupt pipe for key and joystick events\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s failed to open input interrupt pipe for key and joystick events\n",
+			gdata->name);
 		error = -EINVAL;
 		goto err_cleanup_hid;
 	}
@@ -98,7 +105,7 @@ err_no_cleanup:
 EXPORT_SYMBOL_GPL(gcore_hid_open);
 
 
-void gcore_hid_close(struct gcore_data * gdata)
+void gcore_hid_close(struct gcore_data *gdata)
 {
 	struct hid_device *hdev = gdata->hdev;
 
@@ -109,16 +116,20 @@ EXPORT_SYMBOL_GPL(gcore_hid_close);
 
 
 
-int gcore_input_probe(struct gcore_data *gdata, const unsigned int default_keymap[], int keymap_size)
+int gcore_input_probe(struct gcore_data *gdata,
+		      const unsigned int default_keymap[],
+		      int keymap_size)
 {
 	struct hid_device *hdev = gdata->hdev;
-	int i,error;
-        unsigned int * keycode;
+	int i, error;
+	unsigned int *keycode;
 
 	/* Set up the input device for the key I/O */
 	gdata->input_dev = input_allocate_device();
 	if (gdata->input_dev == NULL) {
-		dev_err(&hdev->dev, "%s error initializing the input device", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error initializing the input device",
+			gdata->name);
 		error = -ENOMEM;
 		goto err_no_cleanup;
 	}
@@ -138,14 +149,14 @@ int gcore_input_probe(struct gcore_data *gdata, const unsigned int default_keyma
 	gdata->input_dev->evbit[0] |= BIT_MASK(EV_REP);
 
 	/* Initialize keymap */
-	gdata->input_dev->keycode = kzalloc(keymap_size * sizeof(unsigned int), GFP_KERNEL);
+	gdata->input_dev->keycode = kcalloc(keymap_size, sizeof(unsigned int),
+					    GFP_KERNEL);
 	if (gdata->input_dev->keycode == NULL) {
-		dev_err(&hdev->dev, "%s error allocating memory for the input device", gdata->name);
 		error = -ENOMEM;
 		goto err_cleanup_input_dev;
 	}
 
-        keycode = gdata->input_dev->keycode;
+	keycode = gdata->input_dev->keycode;
 	gdata->input_dev->keycodemax = keymap_size;
 	gdata->input_dev->keycodesize = sizeof(unsigned int);
 	for (i = 0; i < keymap_size; i++) {
@@ -158,7 +169,9 @@ int gcore_input_probe(struct gcore_data *gdata, const unsigned int default_keyma
 	/* Register input device */
 	error = input_register_device(gdata->input_dev);
 	if (error) {
-		dev_err(&hdev->dev, "%s error registering the input device", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error registering the input device",
+			gdata->name);
 		error = -EINVAL;
 		goto err_cleanup_input_dev_keycode;
 	}
@@ -177,21 +190,22 @@ err_no_cleanup:
 EXPORT_SYMBOL_GPL(gcore_input_probe);
 
 
-void gcore_input_report_key(struct gcore_data *gdata, int scancode, int value) {
+void gcore_input_report_key(struct gcore_data *gdata, int scancode, int value)
+{
 	struct input_dev *idev = gdata->input_dev;
-        int error;
+	int error;
 
 	struct input_keymap_entry ke = {
-		.flags    = 0,
-		.len      = sizeof(scancode),
+		.flags	  = 0,
+		.len	  = sizeof(scancode),
 	};
-        *((int*) ke.scancode) = scancode;
+	*((int *) ke.scancode) = scancode;
 
-        error = input_get_keycode(idev, &ke);
-        if (!error && ke.keycode != KEY_UNKNOWN && ke.keycode != KEY_RESERVED) {
-                /* Only report mapped keys */
+	error = input_get_keycode(idev, &ke);
+	if (!error && ke.keycode != KEY_UNKNOWN && ke.keycode != KEY_RESERVED) {
+		/* Only report mapped keys */
 		input_report_key(idev, ke.keycode, value);
-        } else if (!!value) {
+	} else if (!!value) {
 		/* Or report MSC_SCAN on keypress of an unmapped key */
 		input_event(idev, EV_MSC, MSC_SCAN, scancode);
 	}
@@ -207,25 +221,28 @@ void gcore_input_remove(struct gcore_data *gdata)
 EXPORT_SYMBOL_GPL(gcore_input_remove);
 
 
-int gcore_leds_probe(struct gcore_data *gdata, const struct led_classdev led_templates[], int led_count) 
+int gcore_leds_probe(struct gcore_data *gdata,
+		     const struct led_classdev led_templates[],
+		     int led_count)
 {
 	struct hid_device *hdev = gdata->hdev;
 	int error, i, registered_leds;
-	char * led_name;
+	char *led_name;
 
 	gdata->led_count = led_count;
 
-	gdata->led_cdev = kzalloc(led_count * sizeof(struct led_classdev*), GFP_KERNEL);
+	gdata->led_cdev = kcalloc(led_count,
+				  sizeof(struct led_classdev *),
+				  GFP_KERNEL);
 	if (gdata->led_cdev == NULL) {
-		dev_err(&hdev->dev, "%s error allocating memory for led array", gdata->name);
 		error = -ENOMEM;
 		goto err_no_cleanup;
 	}
-	
+
 	for (i = 0; i < led_count; i++) {
-		gdata->led_cdev[i] = kzalloc(sizeof(struct led_classdev), GFP_KERNEL);
+		gdata->led_cdev[i] = kzalloc(sizeof(struct led_classdev),
+					     GFP_KERNEL);
 		if (gdata->led_cdev[i] == NULL) {
-			dev_err(&hdev->dev, "%s error allocating memory for led %d", gdata->name, i);
 			error = -ENOMEM;
 			goto err_cleanup_led_structs;
 		}
@@ -241,7 +258,6 @@ int gcore_leds_probe(struct gcore_data *gdata, const struct led_classdev led_tem
 		 */
 		led_name = kzalloc(sizeof(char)*20, GFP_KERNEL);
 		if (led_name == NULL) {
-			dev_err(&hdev->dev, "%s error allocating memory for led %d name", gdata->name, i);
 			error = -ENOMEM;
 			goto err_cleanup_led_structs;
 		}
@@ -253,7 +269,9 @@ int gcore_leds_probe(struct gcore_data *gdata, const struct led_classdev led_tem
 		registered_leds = i;
 		error = led_classdev_register(&hdev->dev, gdata->led_cdev[i]);
 		if (error < 0) {
-			dev_err(&hdev->dev, "%s error registering led %d", gdata->name, i);
+			dev_err(&hdev->dev,
+				"%s error registering led %d",
+				gdata->name, i);
 			error = -EINVAL;
 			goto err_cleanup_registered_leds;
 		}
@@ -284,10 +302,10 @@ err_no_cleanup:
 EXPORT_SYMBOL_GPL(gcore_leds_probe);
 
 
-void gcore_leds_remove(struct gcore_data *gdata) 
+void gcore_leds_remove(struct gcore_data *gdata)
 {
 	int i;
-	
+
 	for (i = 0; i < gdata->led_count; i++) {
 		led_classdev_unregister(gdata->led_cdev[i]);
 		kfree(gdata->led_cdev[i]->name);
@@ -298,7 +316,7 @@ void gcore_leds_remove(struct gcore_data *gdata)
 EXPORT_SYMBOL_GPL(gcore_leds_remove);
 
 
-struct hid_device * gcore_led_classdev_to_hdev(struct led_classdev * led_cdev)
+struct hid_device *gcore_led_classdev_to_hdev(struct led_classdev *led_cdev)
 {
 	struct device *dev;
 

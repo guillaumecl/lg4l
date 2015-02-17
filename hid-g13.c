@@ -1,18 +1,18 @@
 /***************************************************************************
- *   Copyright (C) 2009 by Rick L. Vinyard, Jr.                            *
- *   rvinyard@cs.nmsu.edu                                                  *
- *                                                                         *
+ *   Copyright (C) 2009 by Rick L. Vinyard, Jr.				   *
+ *   rvinyard@cs.nmsu.edu						   *
+ *									   *
  *   This program is free software: you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation, either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This driver is distributed in the hope that it will be useful, but    *
- *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
- *   General Public License for more details.                              *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
+ *   the Free Software Foundation, either version 2 of the License, or	   *
+ *   (at your option) any later version.				   *
+ *									   *
+ *   This driver is distributed in the hope that it will be useful, but	   *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of		   *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU	   *
+ *   General Public License for more details.				   *
+ *									   *
+ *   You should have received a copy of the GNU General Public License	   *
  *   along with this software. If not see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 #include <linux/fb.h>
@@ -31,12 +31,6 @@
 
 #include "hid-ids.h"
 #include "hid-gcore.h"
-
-#ifdef __GNUC__
-#define __UNUSED __attribute__ ((unused))
-#else
-#define __UNUSED
-#endif
 
 #define G13_NAME "Logitech G13"
 
@@ -115,18 +109,18 @@ struct g13_data {
 /*
  * Keymap array indices
  *
- * Key        Index
+ * Key	      Index
  * ---------  ------
  * G1-G22     0-21
- * FUNC       22
- * LCD1       23
- * LCD2       24
- * LCD3       25
- * LCD4       26
- * M1         27
- * M2         28
- * M3         29
- * MR         30
+ * FUNC	      22
+ * LCD1	      23
+ * LCD2	      24
+ * LCD3	      25
+ * LCD4	      26
+ * M1	      27
+ * M2	      28
+ * M3	      29
+ * MR	      30
  * BTN_LEFT   31
  * BTN_DOWN   32
  * BTN_STICK  33
@@ -143,11 +137,11 @@ static const unsigned int g13_default_keymap[G13_KEYS] = {
 	KEY_F15, KEY_F16, KEY_F17, KEY_F18, KEY_F19,
 	/* fourth row g20 - g22 */
 	KEY_F20, KEY_F21, KEY_F22,
-	/* next, light left, light center left, light center right, light right */
+	/* next, lightLeft, lightCenterLeft, lightCenterRight, lightRight */
 	/* BTN_0, BTN_1, BTN_2, BTN_3, BTN_4, */
 	KEY_OK, KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT,
 	/* M1, M2, M3, MR */
-	KEY_PROG1, KEY_PROG2, KEY_PROG3, KEY_RECORD ,
+	KEY_PROG1, KEY_PROG2, KEY_PROG3, KEY_RECORD,
 	/* button left, button down, button stick, light */
 	BTN_LEFT, BTN_RIGHT, BTN_MIDDLE, KEY_KBDILLUMTOGGLE
 };
@@ -189,7 +183,8 @@ static void g13_led_mbtns_brightness_set(struct led_classdev *led_cdev,
 	g13_led_mbtns_send(hdev);
 }
 
-static enum led_brightness g13_led_mbtns_brightness_get(struct led_classdev *led_cdev)
+static enum led_brightness
+g13_led_mbtns_brightness_get(struct led_classdev *led_cdev)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -205,7 +200,8 @@ static enum led_brightness g13_led_mbtns_brightness_get(struct led_classdev *led
 	else if (led_cdev == gdata->led_cdev[G13_LED_MR])
 		value = g13data->led_mbtns & 0x08;
 	else
-		dev_err(&hdev->dev, G13_NAME " error retrieving LED brightness\n");
+		dev_err(&hdev->dev,
+			G13_NAME " error retrieving LED brightness\n");
 
 	if (value)
 		return LED_FULL;
@@ -216,16 +212,18 @@ static void g13_led_bl_send(struct hid_device *hdev)
 {
 	struct g13_data *g13data = hid_get_g13data(hdev);
 
-	g13data->backlight_report->field[0]->value[0] = g13data->backlight_rgb[0];
-	g13data->backlight_report->field[0]->value[1] = g13data->backlight_rgb[1];
-	g13data->backlight_report->field[0]->value[2] = g13data->backlight_rgb[2];
-	g13data->backlight_report->field[0]->value[3] = 0x00;
+	struct hid_field *field0 = g13data->backlight_report->field[0];
+
+	field0->value[0] = g13data->backlight_rgb[0];
+	field0->value[1] = g13data->backlight_rgb[1];
+	field0->value[2] = g13data->backlight_rgb[2];
+	field0->value[3] = 0x00;
 
 	hid_hw_request(hdev, g13data->backlight_report, HID_REQ_SET_REPORT);
 }
 
 static void g13_led_bl_brightness_set(struct led_classdev *led_cdev,
-                                      enum led_brightness value)
+				      enum led_brightness value)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -241,7 +239,8 @@ static void g13_led_bl_brightness_set(struct led_classdev *led_cdev,
 	g13_led_bl_send(hdev);
 }
 
-static enum led_brightness g13_led_bl_brightness_get(struct led_classdev *led_cdev)
+static enum led_brightness
+g13_led_bl_brightness_get(struct led_classdev *led_cdev)
 {
 	struct hid_device *hdev = gcore_led_classdev_to_hdev(led_cdev);
 	struct gcore_data *gdata = hid_get_gdata(hdev);
@@ -253,52 +252,52 @@ static enum led_brightness g13_led_bl_brightness_get(struct led_classdev *led_cd
 		return g13data->backlight_rgb[1];
 	else if (led_cdev == gdata->led_cdev[G13_LED_BL_B])
 		return g13data->backlight_rgb[2];
-	else
-		dev_err(&hdev->dev, G13_NAME " error retrieving LED brightness\n");
 
+	dev_err(&hdev->dev, G13_NAME " error retrieving LED brightness\n");
 	return LED_OFF;
 }
 
 static const struct led_classdev g13_led_cdevs[LED_COUNT] = {
 	{
-		.name                   = "g13_%d:red:m1",
+		.name			= "g13_%d:red:m1",
 		.brightness_set		= g13_led_mbtns_brightness_set,
 		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g13_%d:red:m2",
+		.name			= "g13_%d:red:m2",
 		.brightness_set		= g13_led_mbtns_brightness_set,
 		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g13_%d:red:m3",
+		.name			= "g13_%d:red:m3",
 		.brightness_set		= g13_led_mbtns_brightness_set,
 		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g13_%d:red:mr",
+		.name			= "g13_%d:red:mr",
 		.brightness_set		= g13_led_mbtns_brightness_set,
 		.brightness_get		= g13_led_mbtns_brightness_get,
 	},
 	{
-		.name                   = "g13_%d:red:bl",
+		.name			= "g13_%d:red:bl",
 		.brightness_set		= g13_led_bl_brightness_set,
 		.brightness_get		= g13_led_bl_brightness_get,
 	},
 	{
-		.name                   = "g13_%d:green:bl",
+		.name			= "g13_%d:green:bl",
 		.brightness_set		= g13_led_bl_brightness_set,
 		.brightness_get		= g13_led_bl_brightness_get,
 	},
 	{
-		.name                   = "g13_%d:blue:bl",
+		.name			= "g13_%d:blue:bl",
 		.brightness_set		= g13_led_bl_brightness_set,
 		.brightness_get		= g13_led_bl_brightness_get,
 	},
 };
 
 static DEVICE_ATTR(fb_node, 0444, gfb_fb_node_show, NULL);
-static DEVICE_ATTR(fb_update_rate, 0664, gfb_fb_update_rate_show, gfb_fb_update_rate_store);
+static DEVICE_ATTR(fb_update_rate, 0664,
+		   gfb_fb_update_rate_show, gfb_fb_update_rate_store);
 static DEVICE_ATTR(name, 0664, gcore_name_show, gcore_name_store);
 static DEVICE_ATTR(minor, 0444, gcore_minor_show, NULL);
 
@@ -316,14 +315,15 @@ static struct attribute_group g13_attr_group = {
 
 
 static void g13_raw_event_process_input(struct hid_device *hdev,
-                                        struct gcore_data *gdata,
-                                        u8 *raw_data)
+					struct gcore_data *gdata,
+					u8 *raw_data)
 {
 	struct input_dev *idev = gdata->input_dev;
 	int scancode;
 	int value;
 	int i;
 	int mask;
+
 	for (i = 0, mask = 0x01; i < 8; i++, mask <<= 1) {
 		/* Keys G1 through G8 */
 		scancode = i;
@@ -359,8 +359,8 @@ static void g13_raw_event_process_input(struct hid_device *hdev,
 }
 
 static int g13_raw_event(struct hid_device *hdev,
-                         struct hid_report *report,
-                         u8 *raw_data, int size)
+			 struct hid_report *report,
+			 u8 *raw_data, int size)
 {
 	unsigned long irq_flags;
 
@@ -379,11 +379,11 @@ static int g13_raw_event(struct hid_device *hdev,
 			if (!(g13data->ready_stages & G13_READY_SUBSTAGE_1))
 				g13data->ready_stages |= G13_READY_SUBSTAGE_1;
 			else if (g13data->ready_stages & G13_READY_SUBSTAGE_4 &&
-			         !(g13data->ready_stages & G13_READY_SUBSTAGE_5)
-			        )
+				 !(g13data->ready_stages & G13_READY_SUBSTAGE_5)
+				)
 				g13data->ready_stages |= G13_READY_SUBSTAGE_5;
 			else if (g13data->ready_stages & G13_READY_SUBSTAGE_6 &&
-			         raw_data[1] >= 0x80)
+				 raw_data[1] >= 0x80)
 				g13data->ready_stages |= G13_READY_SUBSTAGE_7;
 			break;
 		case 1:
@@ -494,9 +494,10 @@ static int read_feature_reports(struct gcore_data *gdata)
 		default:
 			break;
 		}
-		dbg_hid(G13_NAME " Feature report: id=%u type=%u size=%u maxfield=%u report_count=%u\n",
-		        report->id, report->type, report->size,
-		        report->maxfield, report->field[0]->report_count);
+		dbg_hid("%s Feature report: id=%u type=%u size=%u maxfield=%u report_count=%u\n",
+			gdata->name,
+			report->id, report->type, report->size,
+			report->maxfield, report->field[0]->report_count);
 	}
 
 	if (list_empty(output_report_list)) {
@@ -506,13 +507,16 @@ static int read_feature_reports(struct gcore_data *gdata)
 	dbg_hid(G13_NAME " output report found\n");
 
 	list_for_each_entry(report, output_report_list, list) {
-		dbg_hid(G13_NAME " output report %d found size=%u maxfield=%u\n", report->id, report->size, report->maxfield);
+		dbg_hid("%s output report %d found size=%u maxfield=%u\n",
+			gdata->name,
+			report->id, report->size, report->maxfield);
 		if (report->maxfield > 0) {
-			dbg_hid(G13_NAME " offset=%u size=%u count=%u type=%u\n",
-			        report->field[0]->report_offset,
-			        report->field[0]->report_size,
-			        report->field[0]->report_count,
-			        report->field[0]->report_type);
+			dbg_hid("%s offset=%u size=%u count=%u type=%u\n",
+				gdata->name,
+				report->field[0]->report_offset,
+				report->field[0]->report_size,
+				report->field[0]->report_count,
+				report->field[0]->report_type);
 		}
 		switch (report->id) {
 		case 0x03:
@@ -521,7 +525,7 @@ static int read_feature_reports(struct gcore_data *gdata)
 		}
 	}
 
-	dbg_hid("Found all reports\n");
+	dbg_hid("%s found all reports\n", gdata->name);
 
 	return 0;
 }
@@ -539,10 +543,12 @@ static void wait_ready(struct gcore_data *gdata)
 	 */
 	wait_for_completion_timeout(&g13data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	if (g13data->ready_stages != G13_READY_STAGE_1) {
-		dev_warn(&hdev->dev, G13_NAME " hasn't completed stage 1 yet, forging ahead with initialization\n");
+		dev_warn(&hdev->dev,
+			 "%s hasn't completed stage 1 yet, forging ahead with initialization\n",
+			 gdata->name);
 		/* Force the stage */
 		g13data->ready_stages = G13_READY_STAGE_1;
 	}
@@ -558,10 +564,12 @@ static void wait_ready(struct gcore_data *gdata)
 	hid_hw_request(hdev, g13data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g13data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 	if (g13data->ready_stages != G13_READY_STAGE_2) {
-		dev_warn(&hdev->dev, G13_NAME " hasn't completed stage 2 yet, forging ahead with initialization\n");
+		dev_warn(&hdev->dev,
+			 "%s hasn't completed stage 2 yet, forging ahead with initialization\n",
+			 gdata->name);
 		/* Force the stage */
 		g13data->ready_stages = G13_READY_STAGE_2;
 	}
@@ -570,22 +578,22 @@ static void wait_ready(struct gcore_data *gdata)
 	spin_unlock_irqrestore(&gdata->lock, irq_flags);
 }
 
-static void send_finalize_report(struct gcore_data *gdata) 
+static void send_finalize_report(struct gcore_data *gdata)
 {
 	struct g13_data *g13data = gdata->data;
 	struct hid_device *hdev = gdata->hdev;
 	unsigned long irq_flags;
 
 	/*
-	 * Send the finalize report, then follow with the input report to trigger
-	 * report 6 and wait for us to get a response.
+	 * Send the finalize report, then follow with the input report to
+	 * trigger report 6 and wait for us to get a response.
 	 */
 	g13_feature_report_4_send(hdev, G13_REPORT_4_FINALIZE);
 	hid_hw_request(hdev, g13data->start_input_report, HID_REQ_GET_REPORT);
 	hid_hw_request(hdev, g13data->start_input_report, HID_REQ_GET_REPORT);
 	wait_for_completion_timeout(&g13data->ready, HZ);
 
-	/* Protect data->ready_stages before checking whether we're ready to proceed */
+	/* Protect data->ready_stages */
 	spin_lock_irqsave(&gdata->lock, irq_flags);
 
 	if (g13data->ready_stages != G13_READY_STAGE_3) {
@@ -600,7 +608,7 @@ static void send_finalize_report(struct gcore_data *gdata)
 }
 
 static int g13_probe(struct hid_device *hdev,
-                     const struct hid_device_id *id)
+		     const struct hid_device_id *id)
 {
 	int error;
 	struct gcore_data *gdata;
@@ -610,14 +618,15 @@ static int g13_probe(struct hid_device *hdev,
 
 	gdata = gcore_alloc_data(G13_NAME, hdev);
 	if (gdata == NULL) {
-		dev_err(&hdev->dev, G13_NAME " can't allocate space for device attributes\n");
+		dev_err(&hdev->dev,
+			G13_NAME
+			" can't allocate space for device attributes\n");
 		error = -ENOMEM;
 		goto err_no_cleanup;
 	}
 
 	g13data = kzalloc(sizeof(struct g13_data), GFP_KERNEL);
 	if (g13data == NULL) {
-		dev_err(&hdev->dev, "%s can't allocate space for device attributes\n", gdata->name);
 		error = -ENOMEM;
 		goto err_cleanup_gdata;
 	}
@@ -626,13 +635,18 @@ static int g13_probe(struct hid_device *hdev,
 
 	error = gcore_hid_open(gdata);
 	if (error) {
-		dev_err(&hdev->dev, "%s error opening hid device\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error opening hid device\n",
+			gdata->name);
 		goto err_cleanup_g13data;
 	}
 
-	error = gcore_input_probe(gdata, g13_default_keymap, ARRAY_SIZE(g13_default_keymap));
+	error = gcore_input_probe(gdata, g13_default_keymap,
+				  ARRAY_SIZE(g13_default_keymap));
 	if (error) {
-		dev_err(&hdev->dev, "%s error registering input device\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error registering input device\n",
+			gdata->name);
 		goto err_cleanup_hid;
 	}
 
@@ -647,11 +661,14 @@ static int g13_probe(struct hid_device *hdev,
 
 	error = read_feature_reports(gdata);
 	if (error) {
-		dev_err(&hdev->dev, "%s error reading feature reports\n", gdata->name);
+		dev_err(&hdev->dev,
+			"%s error reading feature reports\n",
+			gdata->name);
 		goto err_cleanup_input;
 	}
 
-	error = gcore_leds_probe(gdata, g13_led_cdevs, ARRAY_SIZE(g13_led_cdevs));
+	error = gcore_leds_probe(gdata, g13_led_cdevs,
+				 ARRAY_SIZE(g13_led_cdevs));
 	if (error) {
 		dev_err(&hdev->dev, "%s error registering leds\n", gdata->name);
 		goto err_cleanup_input;
@@ -729,9 +746,7 @@ static void g13_remove(struct hid_device *hdev)
 }
 
 static const struct hid_device_id g13_devices[] = {
-	{
-		HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G13)
-	},
+	{ HID_USB_DEVICE(USB_VENDOR_ID_LOGITECH, USB_DEVICE_ID_LOGITECH_G13) },
 	{ }
 };
 MODULE_DEVICE_TABLE(hid, g13_devices);
@@ -744,8 +759,8 @@ static struct hid_driver g13_driver = {
 	.raw_event		= g13_raw_event,
 
 #ifdef CONFIG_PM
-	.resume                 = g13_resume,
-	.reset_resume           = g13_reset_resume,
+	.resume			= g13_resume,
+	.reset_resume		= g13_reset_resume,
 #endif
 };
 
