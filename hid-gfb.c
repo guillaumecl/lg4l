@@ -32,6 +32,7 @@
 
 #include "hid-ids.h"
 #include "hid-gcore.h"
+#include "hid-gfb.h"
 
 #define GFB_NAME "Logitech GamePanel Framebuffer"
 
@@ -724,7 +725,7 @@ err_cleanup_fb:
 err_cleanup_data:
 	kref_put(&data->kref, gfb_free_data);
 
-err_no_cleanup:	
+err_no_cleanup:
 	return NULL;
 }
 EXPORT_SYMBOL_GPL(gfb_probe);

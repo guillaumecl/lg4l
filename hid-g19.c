@@ -32,6 +32,7 @@
 
 #include "hid-ids.h"
 #include "hid-gcore.h"
+#include "hid-gfb.h"
 
 #define G19_NAME "Logitech G19"
 

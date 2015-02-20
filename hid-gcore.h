@@ -1,7 +1,8 @@
 #ifndef HID_GCORE_H_INCLUDED
 #define HID_GCORE_H_INCLUDED		1
 
-#include "hid-gfb.h"
+/* See hid-gfb.h */
+struct gfb_data;
 
 /* Private driver data that is common for G-series drivers
  *
