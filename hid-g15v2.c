@@ -569,7 +569,6 @@ static int g15v2_probe(struct hid_device *hdev,
 	dev_dbg(&hdev->dev, "Logitech G15v2 HID hardware probe...");
 
 	gdata = gcore_alloc_data(G15V2_NAME, hdev);
-	gdata = kzalloc(sizeof(struct g15v2_data), GFP_KERNEL);
 	if (gdata == NULL) {
 		dev_err(&hdev->dev, G15V2_NAME " can't allocate space for device attributes\n");
 		error = -ENOMEM;
