@@ -879,4 +879,4 @@ MODULE_DESCRIPTION("Logitech G19 HID Driver");
 MODULE_AUTHOR("Alistair Buxton (a.j.buxton@gmail.com)");
 MODULE_AUTHOR("Thomas Berger (tbe@boreus.de)");
 MODULE_AUTHOR("Ciubotariu Ciprian (cheepeero@gmx.net)");
-MODULE_LICENSE("GPL v2");
+MODULE_LICENSE("GPL");
