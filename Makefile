@@ -1,25 +1,6 @@
-ifneq ($(KERNELRELEASE),)
-# kbuild part
-
-obj-m := hid-gcore.o hid-gfb.o hid-g110.o hid-g13.o hid-g15.o hid-g15v2.o hid-g19.o 
-
-else
-# development build
-
-KVERSION = $(shell uname -r)
-KDIR := /lib/modules/$(KVERSION)/build
-PWD := $(shell pwd)
-
-default:
-	$(MAKE) -C $(KDIR) M=$(PWD)
-
-clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
-
-install:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules_install
-
-TAGS:
-	$(MAKE) -C $(KDIR) M=$(PWD) TAGS
-
-endif
+obj-$(CONFIG_HID_LG4L)			+= hid-gcore.o hid-gfb.o
+obj-$(CONFIG_HID_LG4L_G13)		+= hid-g13.o
+obj-$(CONFIG_HID_LG4L_G15)		+= hid-g15.o
+obj-$(CONFIG_HID_LG4L_G15v2)		+= hid-g15v2.o
+obj-$(CONFIG_HID_LG4L_G19)		+= hid-g19.o
+obj-$(CONFIG_HID_LG4L_G110)		+= hid-g110.o

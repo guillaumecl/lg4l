@@ -1,0 +1,44 @@
+config HID_LG4L
+	tristate "Logitech devices G series"
+	depends on FB
+	select FB_DEFERRED_IO
+	select FB_SYS_FILLRECT
+	select FB_SYS_COPYAREA
+	select FB_SYS_IMAGEBLIT
+	select FB_SYS_FOPS
+	depends on HID
+	---help---
+	Support for Logitech G series devices.
+
+config HID_LG4L_G13
+	tristate "Logitech G13 gameboard support"
+	depends on HID_LG4L
+	---help---
+	This provides support for Logitech G13 gameboard
+	devices. This includes support for the device
+	as a keypad input with mappable keys as well as
+	a framebuffer for the LCD display.
+
+config HID_LG4L_G15
+	tristate "Logitech G15 gameboard support"
+	depends on HID_LG4L
+	---help---
+	Help about G15 device
+
+config HID_LG4L_G15v2
+	tristate "Logitech G15v2 gameboard support"
+	depends on HID_LG4L
+	---help---
+	Help about G15v2 device
+
+config HID_LG4L_G19
+	tristate "Logitech G19 gameboard support"
+	depends on HID_LG4L
+	---help---
+	Help about G19 device
+
+config HID_LG4L_G110
+	tristate "Logitech G110 gameboard support"
+	depends on HID_LG4L
+	---help---
+	Help about G110 device
