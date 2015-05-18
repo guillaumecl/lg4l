@@ -29,7 +29,7 @@
 #include <linux/completion.h>
 #include <linux/version.h>
 
-#include "hid-ids.h"
+#include "../hid-ids.h"
 #include "hid-gcore.h"
 
 #define G110_NAME "Logitech G110"

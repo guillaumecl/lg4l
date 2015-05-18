@@ -30,7 +30,7 @@
 #include <linux/completion.h>
 #include <linux/version.h>
 
-#include "hid-ids.h"
+#include "../hid-ids.h"
 #include "hid-gcore.h"
 #include "hid-gfb.h"
 
