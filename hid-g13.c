@@ -37,17 +37,6 @@
 
 /* Key defines */
 #define G13_KEYS 35
-#define G13_KEYMAP_SIZE (G13_KEYS*3)
-
-/* Framebuffer defines */
-#define G13FB_NAME "g13fb"
-#define G13FB_WIDTH (160)
-#define G13FB_LINE_LENGTH (160/8)
-#define G13FB_HEIGHT (43)
-#define G13FB_SIZE (G13FB_LINE_LENGTH*G13FB_HEIGHT)
-
-#define G13FB_UPDATE_RATE_LIMIT (20)
-#define G13FB_UPDATE_RATE_DEFAULT (10)
 
 /* Backlight defaults */
 #define G13_DEFAULT_RED (0)
